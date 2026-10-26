@@ -32,7 +32,8 @@ describe('cold template', () => {
     expect(mail.html).not.toMatch(/listas compradas/i);
     expect(mail.text).not.toMatch(/listas compradas|publicado en/i);
     expect(mail.html).toContain('baja-outreach');
-    expect(mail.html).toContain('Probar gratis ahora');
+    expect(mail.html).toMatch(/Reg[ií]strate gratis/i);
+    expect(mail.html).toMatch(/sin tarjeta/i);
     expect(mail.html).toMatch(/Reservas directas|comisiones/i);
     expect(mail.html).toMatch(/limpieza/i);
     expect(mail.text).toMatch(/Instagram:/);

@@ -103,18 +103,18 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
   const videoThumb =
     process.env.OUTREACH_INTRO_VIDEO_THUMB?.trim() || OUTREACH_INTRO_VIDEO_THUMB;
 
-  // Asunto: beneficio + gratis (curiosidad, sin presión)
+  // Asunto: beneficio + gratis sin tarjeta (apertura + conversión)
   const subject = isAgency
-    ? `Parte MIR + gestión multi-vivienda — prueba gratis`
+    ? `Parte MIR multi-vivienda — regístrate gratis (sin tarjeta)`
     : isHotel
-      ? `Parte de viajeros MIR por habitación — prueba gratis`
-      : `Parte de viajeros MIR gratis — y mucho más para tu casa`;
+      ? `Parte MIR por habitación — regístrate gratis (sin tarjeta)`
+      : `Parte de viajeros MIR — regístrate gratis, sin tarjeta`;
 
   const preheader = isAgency
-    ? 'Parte al MIR, limpieza y reservas directas en un solo sitio. Sin tarjeta.'
+    ? 'Gratis sin tarjeta. Parte MIR + limpiezas + reservas directas. 1 clic.'
     : isHotel
-      ? 'Cumple el RD 933/2021 y simplifica el día a día del hotel. Prueba gratis.'
-      : 'Cumple el parte MIR y gana con limpieza + reservas directas (menos comisiones). Gratis.';
+      ? 'Gratis sin tarjeta. Cumple el RD 933/2021 y simplifica el hotel. 1 clic.'
+      : 'Gratis sin tarjeta. Parte MIR + limpiezas + reservas directas (menos comisiones).';
 
   // Hook + valor (sin “encontré tu email”)
   const pitchBody = isAgency
@@ -126,10 +126,12 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
 Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del anfitrión: calendario de limpiezas, reservas directas (para reducir comisiones de Airbnb y Booking) y todo el día a día del alojamiento en un solo sitio.`;
 
   const trialLine = isAgency
-    ? `Probadlo gratis, sin tarjeta. Un clic y en un minutito estáis dentro. Si más adelante encaja, desde 2€/mes por propiedad.`
+    ? `Registraos gratis, sin tarjeta. Un clic y en un minutito estáis dentro. Si más adelante encaja el plan de pago, desde 2€/mes por propiedad.`
     : isHotel
-      ? `Probadlo gratis, sin tarjeta. Un clic y en un minutito estáis dentro. Si más adelante encaja, desde 2€/mes.`
-      : `Pruébalo gratis (1 propiedad), sin tarjeta. Un clic y en un minutito estás dentro. Si más adelante te encaja, desde 2€/mes; si no, te quedas en gratis o te das de baja.`;
+      ? `Registraos gratis, sin tarjeta. Un clic y en un minutito estáis dentro. Si más adelante encaja, desde 2€/mes.`
+      : `Regístrate gratis (1 propiedad), sin tarjeta. Un clic y en un minutito estás dentro usándolo. Si más adelante te encaja un plan de pago, desde 2€/mes; si no, te quedas en gratis o te das de baja.`;
+
+  const ctaLabel = 'Regístrate gratis — sin tarjeta';
 
   const socialText = [
     'Síguenos:',
@@ -168,7 +170,7 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
     ``,
     trialLine,
     ``,
-    `Probar gratis ahora:`,
+    `Regístrate gratis (sin tarjeta):`,
     signup,
     ``,
     socialText,
@@ -204,25 +206,38 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
   </noscript>
   <![endif]-->
 </head>
-<body style="margin:0;padding:0;background-color:#eef6fc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<body style="margin:0;padding:0;background-color:#e8f4fc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
   <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
     ${escapeHtml(preheader)}
   </div>
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#eef6fc;border-collapse:collapse;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#e8f4fc;border-collapse:collapse;">
     <tr>
-      <td align="center" style="padding:28px 12px;">
+      <td align="center" style="padding:32px 12px;">
         <!--[if mso]><table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"><tr><td><![endif]-->
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #dbe7f3;border-radius:12px;border-collapse:separate;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #cfe5f5;border-radius:14px;border-collapse:separate;overflow:hidden;">
+          <!-- Barra marca -->
           <tr>
-            <td align="left" style="background-color:#0284c7;padding:22px 28px;border-radius:12px 12px 0 0;">
-              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:1.25;font-weight:700;color:#ffffff;">Delfín Check-in</p>
-              <p style="margin:6px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;color:#e0f2fe;">El parte de viajeros… y todo lo demás</p>
+            <td style="background-color:#0369a1;height:6px;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td align="left" style="background-color:#0284c7;padding:26px 28px;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:24px;line-height:1.2;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">Delfín Check-in</p>
+              <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.4;color:#e0f2fe;">Parte de viajeros MIR · limpiezas · reservas directas</p>
+            </td>
+          </tr>
+
+          <!-- Franja confianza -->
+          <tr>
+            <td align="center" style="background-color:#f0f9ff;padding:14px 20px;border-bottom:1px solid #e0f2fe;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#0369a1;letter-spacing:0.02em;">
+                GRATIS &nbsp;·&nbsp; SIN TARJETA &nbsp;·&nbsp; 1 CLIC &nbsp;·&nbsp; ESPAÑA
+              </p>
             </td>
           </tr>
 
           <tr>
-            <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#0f172a;">
-              <p style="margin:0 0 16px;">Hola,</p>
+            <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65;color:#0f172a;">
+              <p style="margin:0 0 14px;">Hola,</p>
               <p style="margin:0 0 16px;">Soy <strong>${escapeHtml(sender)}</strong>.</p>
               ${pitchBody
                 .split(/\n\n+/)
@@ -234,17 +249,34 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
             </td>
           </tr>
 
+          <!-- Beneficios en filas (email-safe, llamativo) -->
           <tr>
-            <td align="center" style="padding:8px 28px;">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;background-color:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+            <td style="padding:4px 28px 8px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:separate;border:1px solid #bae6fd;border-radius:12px;background-color:#f8fbff;">
                 <tr>
-                  <td style="padding:16px 18px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#334155;">
-                    <strong style="color:#0f172a;">Además del parte MIR</strong>
-                    <ul style="margin:10px 0 0;padding:0 0 0 18px;">
-                      <li style="margin:0 0 6px;">Calendario de limpiezas</li>
-                      <li style="margin:0 0 6px;">Reservas directas (menos comisiones de Airbnb y Booking)</li>
-                      <li style="margin:0;">Panel móvil para el día a día del alojamiento</li>
-                    </ul>
+                  <td style="padding:18px 20px 6px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:#0c4a6e;">
+                    Todo en un solo sitio
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:0 20px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#334155;">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td style="padding:8px 0;border-bottom:1px solid #e0f2fe;">
+                          <span style="color:#0284c7;font-weight:700;">&#10003;</span>&nbsp; Parte de viajeros al MIR (obligatorio)
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 0;border-bottom:1px solid #e0f2fe;">
+                          <span style="color:#0284c7;font-weight:700;">&#10003;</span>&nbsp; Calendario de limpiezas
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding:8px 0;">
+                          <span style="color:#0284c7;font-weight:700;">&#10003;</span>&nbsp; Reservas directas (menos comisiones Airbnb / Booking)
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
@@ -252,15 +284,15 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
           </tr>
 
           <tr>
-            <td align="center" style="padding:16px 28px 8px;">
+            <td align="center" style="padding:18px 28px 8px;">
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
                 <tr>
-                  <td align="center" style="background-color:#0f172a;border-radius:10px;">
+                  <td align="center" style="background-color:#0f172a;border-radius:12px;">
                     <a href="${escapeAttr(videoUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:block;">
-                      <img src="${escapeAttr(videoThumb)}" width="544" height="306" alt="Ver vídeo: Qué es Delfín Check-in" style="display:block;width:100%;max-width:544px;height:auto;border:0;border-radius:10px 10px 0 0;" />
+                      <img src="${escapeAttr(videoThumb)}" width="544" height="306" alt="Ver vídeo: Qué es Delfín Check-in" style="display:block;width:100%;max-width:544px;height:auto;border:0;border-radius:12px 12px 0 0;" />
                     </a>
-                    <a href="${escapeAttr(videoUrl)}" target="_blank" rel="noopener noreferrer" style="display:block;text-decoration:none;background-color:#0f172a;padding:14px 16px;border-radius:0 0 10px 10px;">
-                      <span style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:#ffffff;">&#9654;&nbsp; Ver vídeo · 1 minuto</span>
+                    <a href="${escapeAttr(videoUrl)}" target="_blank" rel="noopener noreferrer" style="display:block;text-decoration:none;background-color:#0f172a;padding:14px 16px;border-radius:0 0 12px 12px;">
+                      <span style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:#ffffff;">&#9654;&nbsp; Ver en 1 minuto qué es Delfín Check-in</span>
                     </a>
                   </td>
                 </tr>
@@ -269,32 +301,42 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
           </tr>
 
           <tr>
-            <td style="padding:16px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#0f172a;">
+            <td style="padding:18px 28px 4px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#0f172a;">
               <p style="margin:0;">${escapeHtml(trialLine)}</p>
             </td>
           </tr>
 
+          <!-- CTA principal (doble borde = más presencia en clientes de correo) -->
           <tr>
-            <td align="center" style="padding:22px 28px 10px;">
+            <td align="center" style="padding:24px 28px 8px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
                 <tr>
-                  <td align="center" bgcolor="#0284c7" style="border-radius:12px;background-color:#0284c7;">
-                    <a href="${escapeAttr(signup)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:18px 40px;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;line-height:1.2;">
-                      Probar gratis ahora
-                    </a>
+                  <td align="center" bgcolor="#075985" style="border-radius:14px;background-color:#075985;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td align="center" bgcolor="#0284c7" style="border-radius:12px;background-color:#0284c7;mso-padding-alt:0;">
+                          <a href="${escapeAttr(signup)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:20px 44px;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;line-height:1.25;">
+                            ${escapeHtml(ctaLabel)}
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
-              <p style="margin:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#64748b;">
-                Sin tarjeta · 1 clic · móvil u ordenador
+              <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#0369a1;font-weight:700;">
+                Empieza gratis hoy · sin tarjeta · sin compromiso
+              </p>
+              <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.4;color:#94a3b8;">
+                Si el botón no funciona: <a href="${escapeAttr(signup)}" style="color:#0284c7;word-break:break-all;">abrir enlace</a>
               </p>
             </td>
           </tr>
 
           <tr>
-            <td style="padding:20px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#475569;border-top:1px solid #e2e8f0;">
+            <td style="padding:22px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#475569;border-top:1px solid #e2e8f0;">
               <p style="margin:0 0 8px;font-weight:700;color:#0f172a;font-size:15px;">Síguenos</p>
-              <p style="margin:0 0 14px;font-size:13px;color:#64748b;">Tips para anfitriones y novedades del producto.</p>
+              <p style="margin:0 0 14px;font-size:13px;color:#64748b;">Consejos para anfitriones y novedades del producto.</p>
               ${socialHtml}
             </td>
           </tr>
@@ -304,7 +346,7 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
               <p style="margin:0 0 12px;">Si no te interesa, <a href="${escapeAttr(params.optOutUrl)}" style="color:#0284c7;">date de baja en un clic</a>
                 y no te volveremos a escribir. También puedes responder “baja” o escribir a
                 <a href="mailto:soporte@delfincheckin.com" style="color:#0284c7;">soporte@delfincheckin.com</a>.</p>
-              <p style="margin:0;font-size:12px;color:#94a3b8;">© ${year} Delfín Check-in · ${escapeHtml(domainLabel)}</p>
+              <p style="margin:0;font-size:12px;color:#94a3b8;">© ${year} Delfín Check-in</p>
             </td>
           </tr>
         </table>
