@@ -4,13 +4,19 @@
  * Uso: npx tsx scripts/public-owner-leads/send-template-preview.ts [email]
  *
  * Incluye logos de redes embebidos (CID) para que se vean aunque aún no estén en prod.
+ * Carga SMTP desde .env.outreach.local / .env.local automáticamente.
  */
 import path from 'path';
 import fs from 'fs';
+import { config as loadDotenv } from 'dotenv';
 import { buildColdOutreachEmail, getOutreachSocialLinks } from '../../src/lib/public-owner-leads/template';
 import { buildOutreachOptOutUrl } from '../../src/lib/public-owner-leads/optout';
 import { buildOutreachActivateUrl } from '../../src/lib/public-owner-leads/activate-link';
 import { createOutreachTransport, outreachFromAddress } from '../../src/lib/public-owner-leads/send-smtp';
+
+// SMTP: primero outreach, luego .env.local (sin pisar vars ya definidas)
+loadDotenv({ path: path.join(process.cwd(), '.env.outreach.local') });
+loadDotenv({ path: path.join(process.cwd(), '.env.local') });
 
 async function main() {
   const to = (process.argv[2] || 'contacto@delfincheckin.com').trim().toLowerCase();
