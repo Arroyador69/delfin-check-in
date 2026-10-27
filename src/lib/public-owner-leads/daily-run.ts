@@ -454,7 +454,9 @@ export async function runDailyPublicOwnerLeads(opts?: {
     errors.push(`flow-b:skip cola=${queuedAhead}≥budget×2 (prioridad enviar)`);
   }
 
-  // Extraer si cola baja. Prepare/mañana priorizan relleno.
+  // Extraer / scrapear: SOLO si hace falta stock para esta oleada.
+  // Si ya hay ≥ budget en cola, NO scrapear antes de enviar (evita timeout Vercel
+  // y deja la oleada en 0 enviados). El refill post-envío recupera MIN_QUEUED.
   let extractLimit = opts?.extractLimit ?? PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN;
   if (!dryRun) {
     try {
@@ -463,7 +465,13 @@ export async function runDailyPublicOwnerLeads(opts?: {
         WHERE status = 'queued' AND opted_out = false
       `;
       const queuedNow = Number(qn.rows[0]?.n || 0);
-      if (queuedNow < PUBLIC_OWNER_LEADS_MIN_QUEUED || wave === 'prepare') {
+      const sendBudgetPreview = wave === 'prepare' ? 0 : budget;
+      if (wave !== 'prepare' && sendBudgetPreview > 0 && queuedNow >= sendBudgetPreview) {
+        extractLimit = 0;
+        errors.push(
+          `extract:skip cola=${queuedNow}≥budget=${sendBudgetPreview} (prioridad enviar; refill después)`
+        );
+      } else if (queuedNow < PUBLIC_OWNER_LEADS_MIN_QUEUED || wave === 'prepare') {
         extractLimit = Math.max(
           extractLimit,
           wave === 'prepare' ? 45 : 32
@@ -475,13 +483,19 @@ export async function runDailyPublicOwnerLeads(opts?: {
     }
   }
 
-  const extract = await processPendingSources(extractLimit, dryRun);
+  const extract =
+    extractLimit > 0
+      ? await processPendingSources(extractLimit, dryRun)
+      : { processed: 0, discovered: 0, errors: [] as string[] };
   errors.push(...extract.errors);
 
-  const queued = await queueNewLeads(
-    Math.max(budget, extractLimit, PUBLIC_OWNER_LEADS_MIN_QUEUED),
-    dryRun
-  );
+  const queued =
+    extractLimit > 0
+      ? await queueNewLeads(
+          Math.max(budget, extractLimit, PUBLIC_OWNER_LEADS_MIN_QUEUED),
+          dryRun
+        )
+      : 0;
 
   // Prepare: forzar budget 0 (nunca enviar en esta oleada)
   const sendBudget = wave === 'prepare' ? 0 : budget;

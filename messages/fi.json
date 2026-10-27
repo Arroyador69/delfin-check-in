@@ -529,6 +529,11 @@
       "passwordChanged": "Salasana vaihdettu",
       "changePassword": "Tallenna ja jatka",
       "continueNext": "Jatka seuraavaan vaiheeseen",
+      "outreachLiteTitle": "Tilisi on valmis",
+      "outreachLiteBody": "Ilmainen käyttö, ei korttia. Voit määrittää majoituksen, MIR:n ja huoneet myöhemmin hallintapaneelista.",
+      "outreachLiteEnter": "Siirry hallintapaneeliin",
+      "outreachLiteEntering": "Siirrytään…",
+      "outreachLiteOrPassword": "Tai aseta nyt henkilökohtainen salasana (valinnainen):",
       "introSkipCurrent": "Olet jo kirjautunut aktivointilinkillä. Valitse vain uusi salasana (väh. 8 merkkiä). Väliaikaista ei tarvitse syöttää uudelleen.",
       "currentPasswordHint": "Kopioi sähköpostista. Älä sekoita 1, I ja l. Jos pyysit uuden linkin, käytä vain viimeisintä viestiä."
     },

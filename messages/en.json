@@ -579,7 +579,12 @@
       "changing": "Changing...",
       "passwordChanged": "Password Changed",
       "changePassword": "Save and continue",
-      "continueNext": "Continue to next step"
+      "continueNext": "Continue to next step",
+      "outreachLiteTitle": "Your account is ready",
+      "outreachLiteBody": "You are in for free, no card required. You can set up property details, MIR and rooms later from the dashboard (we will remind you in the bell).",
+      "outreachLiteEnter": "Enter the dashboard now",
+      "outreachLiteEntering": "Entering…",
+      "outreachLiteOrPassword": "Or set a personal password now (optional):"
     },
     "step2": {
       "title": "📋 Accommodation details",

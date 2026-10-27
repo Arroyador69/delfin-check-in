@@ -50,17 +50,30 @@ export function buildAntivirusHelpUrl(locale = 'es'): string {
   return `${base}${ANTIVIRUS_HELP_LANDING_PATHS[loc]}`;
 }
 
+export type BuildOnboardingUrlOpts = {
+  /** Flujo cold outreach 1-clic: onboarding ligero (entrar al panel sin wizard completo). */
+  src?: 'outreach';
+};
+
 /**
  * Enlace de activación (magic link). Solo `token` en la URL (menos falsos positivos AV).
  * Enlaces antiguos con `&email=` siguen funcionando en login/onboarding.
  */
-export function buildOnboardingUrl(token: string, locale = 'es'): string {
+export function buildOnboardingUrl(
+  token: string,
+  locale = 'es',
+  opts?: BuildOnboardingUrlOpts
+): string {
   const base = String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(
     /\/+$/,
     ''
   );
   const loc = locale && locale !== 'es' ? `/${locale}` : '/es';
-  return `${base}${loc}/onboarding?token=${encodeURIComponent(token)}`;
+  let url = `${base}${loc}/onboarding?token=${encodeURIComponent(token)}`;
+  if (opts?.src === 'outreach') {
+    url += '&src=outreach';
+  }
+  return url;
 }
 
 /** Resuelve owner por token activo (onboarding_magic_token o reset_token legacy). */

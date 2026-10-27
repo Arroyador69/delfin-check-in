@@ -49,7 +49,7 @@ function onboardingLabel(status?: string | null): string {
   if (s === 'delivered') return 'entregado'
   if (s === 'opened') return 'abrió el email'
   if (s === 'clicked') return 'clic al enlace'
-  if (s === 'failed') return 'fallido'
+  if (s === 'failed') return 'fallido (cuenta OK)'
   if (s === 'bounced') return 'rebotado'
   return s
 }
@@ -59,10 +59,10 @@ function onboardingTitle(status?: string | null, completed?: boolean): string {
   if (!s) {
     return completed
       ? 'No hay fila en email_tracking (alta antigua o sin track), pero el wizard ya está completado.'
-      : 'Sin registro del email de acceso: no se envió o no se trackeó. Cuello de botella: no pueden entrar al onboarding.'
+      : 'Sin registro del email de acceso: no se envió o no se trackeó. Si entró por 1-clic del mail frío, la cuenta existe igual — usa «Reenviar onboarding» solo si necesita contraseña/enlace.'
   }
   if (s === 'failed') {
-    return 'Falló el SMTP del email de acceso (a menudo rate-limit Zoho). Usa «Reenviar onboarding»; el alta 1-clic ya deja entrar al wizard aunque el mail falle.'
+    return 'Falló el SMTP del email de bienvenida (rate-limit Zoho u otro). La cuenta SÍ existe. El CTA 1-clic deja entrar sin ese mail. Usa «Reenviar onboarding» para mandar contraseña temporal de nuevo.'
   }
   if (s === 'opened') {
     return 'Abrió el email de acceso pero aún no completó el wizard (o no hizo clic trackeado). Reenviar si hace falta.'

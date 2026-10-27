@@ -47,6 +47,11 @@ export async function activateWaitlistEntryFromRow(
   const appBase = String(
     process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com'
   ).replace(/\/+$/, '');
+  const outreachLite =
+    body?.one_click === true ||
+    body?.ref === 'owner_outreach' ||
+    String(body?.source || '').includes('outreach');
+  const onboardingUrlOpts = outreachLite ? ({ src: 'outreach' } as const) : undefined;
 
   const existingTenant = await sql`
     SELECT id FROM tenants WHERE email = ${waitlistEntry.email} LIMIT 1
@@ -84,7 +89,11 @@ export async function activateWaitlistEntryFromRow(
         WHERE id = ${existingUser.rows[0].id}
       `;
 
-      const onboardingUrl = buildOnboardingUrl(onboardingToken, requestedLocale);
+      const onboardingUrl = buildOnboardingUrl(
+        onboardingToken,
+        requestedLocale,
+        onboardingUrlOpts
+      );
 
       try {
         await sendOnboardingEmail({
@@ -130,7 +139,11 @@ export async function activateWaitlistEntryFromRow(
       WHERE tenant_id = ${tenantId}::uuid AND email = ${waitlistEntry.email}
     `;
 
-    const onboardingUrlOrphan = buildOnboardingUrl(onboardingTokenOrphan, requestedLocale);
+    const onboardingUrlOrphan = buildOnboardingUrl(
+      onboardingTokenOrphan,
+      requestedLocale,
+      onboardingUrlOpts
+    );
 
     try {
       await sendOnboardingEmail({
@@ -335,7 +348,11 @@ export async function activateWaitlistEntryFromRow(
     console.warn('Error en integración de afiliados (no crítico):', m);
   }
 
-  const onboardingUrl = buildOnboardingUrl(onboardingToken, requestedLocale);
+  const onboardingUrl = buildOnboardingUrl(
+    onboardingToken,
+    requestedLocale,
+    onboardingUrlOpts
+  );
 
   // Siempre devolver onboarding_url: el CTA 1-clic entra al wizard aunque el SMTP falle.
   try {

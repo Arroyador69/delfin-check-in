@@ -519,6 +519,11 @@
       "passwordChanged": "Mot de passe changé",
       "changePassword": "Enregistrer et continuer",
       "continueNext": "Continuer à l'étape suivante",
+      "outreachLiteTitle": "Votre compte est prêt",
+      "outreachLiteBody": "Accès gratuit, sans carte. Vous pourrez configurer l'hébergement, MIR et les chambres plus tard depuis le tableau de bord.",
+      "outreachLiteEnter": "Entrer dans le tableau de bord",
+      "outreachLiteEntering": "Connexion…",
+      "outreachLiteOrPassword": "Ou choisissez un mot de passe personnel maintenant (facultatif) :",
       "introSkipCurrent": "Vous êtes déjà connecté avec votre lien d’activation. Choisissez seulement un nouveau mot de passe (min. 8 caractères). Pas besoin de ressaisir le temporaire.",
       "currentPasswordHint": "Copiez-le depuis l’e-mail. Attention à 1, I et l. Si vous avez demandé un nouveau lien, utilisez uniquement le dernier e-mail."
     },

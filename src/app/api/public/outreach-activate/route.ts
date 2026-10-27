@@ -52,7 +52,7 @@ async function resumeOnboardingRedirect(email: string): Promise<string | null> {
   if (!owner?.user_id) return null;
 
   const { token, tempPassword } = await issueFreshOnboardingCredentials(owner.user_id);
-  const onboardingUrl = buildOnboardingUrl(token, 'es');
+  const onboardingUrl = buildOnboardingUrl(token, 'es', { src: 'outreach' });
 
   try {
     await sendOnboardingEmail({
@@ -132,6 +132,11 @@ export async function GET(req: NextRequest) {
         /ya (tiene|está|está registrado)/i.test(String(data.error || '')))
     ) {
       onboardingUrl = (await resumeOnboardingRedirect(email)) || '';
+    }
+
+    // Alta 1-clic: forzar onboarding ligero aunque el activate no trajera src=
+    if (onboardingUrl && !/[?&]src=outreach(?:&|$)/.test(onboardingUrl)) {
+      onboardingUrl += onboardingUrl.includes('?') ? '&src=outreach' : '?src=outreach';
     }
 
     if (onboardingUrl) {
