@@ -87,6 +87,8 @@ export default function OnboardingPage() {
   const BTN_NAV = 'flex flex-col-reverse sm:flex-row sm:justify-between gap-3 mt-8';
   const BTN_NAV_ACTIONS = 'flex flex-col sm:flex-row gap-3 w-full sm:w-auto';
   const fromMobileApp = searchParams?.get('source') === 'mobile_app';
+  /** Cold outreach 1-clic: onboarding ligero (entrar al panel sin wizard completo). */
+  const outreachLite = searchParams?.get('src') === 'outreach';
   const getStepLabel = (step: number) =>
     t(`progress.stepLabels.${step}` as 'progress.stepLabels.1');
   const [currentStep, setCurrentStep] = useState(1);
@@ -790,9 +792,12 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleCompleteOnboarding = async (opts?: { skipUnits?: boolean }) => {
+  const handleCompleteOnboarding = async (opts?: {
+    skipUnits?: boolean;
+    deferredTasks?: string[];
+  }) => {
     setError('');
-    if (!opts?.skipUnits && !validateStep(5)) {
+    if (!opts?.skipUnits && !opts?.deferredTasks && !validateStep(5)) {
       return;
     }
     setLoading(true);
@@ -823,15 +828,25 @@ export default function OnboardingPage() {
         });
       }
 
+      const deferred =
+        opts?.deferredTasks ||
+        (opts?.skipUnits ? ['units', 'mir', 'stripe'] : undefined);
+
       // Marcar onboarding como completado
       await fetch('/api/tenant/onboarding-status', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           onboarding_status: 'completed',
-          deferred_tasks: opts?.skipUnits ? ['units', 'mir', 'stripe'] : undefined,
+          deferred_tasks: deferred,
         }),
       });
+
+      try {
+        localStorage.removeItem('onboarding_progress_v1');
+      } catch {
+        /* ignore */
+      }
 
       const dashLocale =
         formData.businessLanguage && isValidLocale(formData.businessLanguage)
@@ -844,6 +859,15 @@ export default function OnboardingPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  /** Outreach 1-clic: cuenta + sesión OK → panel con tareas aplazadas (sin depender del email de contraseña). */
+  const handleOutreachLiteEnterDashboard = async () => {
+    setFormData((prev) => ({ ...prev, passwordChanged: true }));
+    await handleCompleteOnboarding({
+      skipUnits: true,
+      deferredTasks: ['company', 'units', 'mir', 'stripe'],
+    });
   };
 
   const handleFinishStep5 = async () => {
@@ -882,37 +906,62 @@ export default function OnboardingPage() {
 
   // Paso 1: Cambiar contraseña
   const canSkipCurrentPassword = Boolean(tenant) && !magicLinkFailed;
+  const showOutreachLite =
+    outreachLite && canSkipCurrentPassword && !formData.passwordChanged && !magicLinkFailed;
   const renderPasswordStep = () => (
     <div className={ONBOARDING_PAGE}>
       <div className={ONBOARDING_CARD}>
-        <div className="mb-6 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 sm:p-5">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug">{t('welcome.title')}</h2>
-          <p className="text-sm text-gray-700 mt-2 leading-relaxed">{t('welcome.subtitle')}</p>
-          <p className="text-sm font-semibold text-gray-900 mt-4">{t('welcome.stepsTitle')}</p>
-          <ul className="mt-2 space-y-1.5 text-xs sm:text-sm text-gray-700">
-            <li>{t('welcome.step1')}</li>
-            <li>{t('welcome.step2')}</li>
-            <li>{t('welcome.step3')}</li>
-            <li>{t('welcome.step4')}</li>
-            <li>{t('welcome.step5')}</li>
-            <li>{t('welcome.step6')}</li>
-          </ul>
-          <TutorialVideoEmbed
-            videoKey="onboarding"
-            title={tVideos('onboardingTitle')}
-            description={tVideos('onboardingDescription')}
-            watchOnYouTubeLabel={tVideos('watchOnYouTube')}
-            spanishAudioNote={tVideos('spanishAudioNote')}
-            className="mt-4 !p-3 sm:!p-4"
-          />
-        </div>
+        {showOutreachLite ? (
+          <div className="mb-6 rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-cyan-50 p-4 sm:p-5">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug">
+              {t('step1.outreachLiteTitle')}
+            </h2>
+            <p className="text-sm text-gray-700 mt-2 leading-relaxed">
+              {t('step1.outreachLiteBody')}
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleOutreachLiteEnterDashboard()}
+              disabled={loading || bootstrappingSession}
+              className={`mt-4 w-full sm:w-auto ${BTN_PRIMARY}`}
+            >
+              {loading ? t('step1.outreachLiteEntering') : t('step1.outreachLiteEnter')}
+            </button>
+          </div>
+        ) : (
+          <div className="mb-6 rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 sm:p-5">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug">{t('welcome.title')}</h2>
+            <p className="text-sm text-gray-700 mt-2 leading-relaxed">{t('welcome.subtitle')}</p>
+            <p className="text-sm font-semibold text-gray-900 mt-4">{t('welcome.stepsTitle')}</p>
+            <ul className="mt-2 space-y-1.5 text-xs sm:text-sm text-gray-700">
+              <li>{t('welcome.step1')}</li>
+              <li>{t('welcome.step2')}</li>
+              <li>{t('welcome.step3')}</li>
+              <li>{t('welcome.step4')}</li>
+              <li>{t('welcome.step5')}</li>
+              <li>{t('welcome.step6')}</li>
+            </ul>
+            <TutorialVideoEmbed
+              videoKey="onboarding"
+              title={tVideos('onboardingTitle')}
+              description={tVideos('onboardingDescription')}
+              watchOnYouTubeLabel={tVideos('watchOnYouTube')}
+              spanishAudioNote={tVideos('spanishAudioNote')}
+              className="mt-4 !p-3 sm:!p-4"
+            />
+          </div>
+        )}
 
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-          {t('step1.title')}
+          {showOutreachLite ? t('step1.outreachLiteOrPassword') : t('step1.title')}
         </h1>
         
         <p className="text-sm sm:text-base text-gray-600 mb-6 leading-relaxed">
-          {canSkipCurrentPassword ? t('step1.introSkipCurrent') : t('step1.intro')}
+          {showOutreachLite
+            ? t('step1.introSkipCurrent')
+            : canSkipCurrentPassword
+              ? t('step1.introSkipCurrent')
+              : t('step1.intro')}
         </p>
 
         {searchParams?.get('token') && !magicLinkFailed && (

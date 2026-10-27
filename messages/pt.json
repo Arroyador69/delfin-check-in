@@ -519,6 +519,11 @@
       "passwordChanged": "Palavra-passe alterada",
       "changePassword": "Guardar e continuar",
       "continueNext": "Continuar para o passo seguinte",
+      "outreachLiteTitle": "A sua conta está pronta",
+      "outreachLiteBody": "Entra grátis, sem cartão. Pode configurar alojamento, MIR e quartos mais tarde no painel.",
+      "outreachLiteEnter": "Entrar no painel agora",
+      "outreachLiteEntering": "A entrar…",
+      "outreachLiteOrPassword": "Ou escolha agora uma palavra-passe pessoal (opcional):",
       "introSkipCurrent": "Já entrou com o link de ativação. Escolha apenas uma palavra-passe nova (mín. 8 caracteres). Não precisa de voltar a escrever a temporária.",
       "currentPasswordHint": "Copie do email. Cuidado com 1, I e l. Se pediu um link novo, use só o último email."
     },

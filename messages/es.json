@@ -580,7 +580,12 @@
       "changing": "Cambiando...",
       "passwordChanged": "Contraseña Cambiada",
       "changePassword": "Guardar y continuar",
-      "continueNext": "Continuar al siguiente paso"
+      "continueNext": "Continuar al siguiente paso",
+      "outreachLiteTitle": "Tu cuenta ya está lista",
+      "outreachLiteBody": "Entras gratis, sin tarjeta. Puedes configurar alojamiento, MIR y habitaciones más tarde desde el panel (te lo recordamos en la campanita).",
+      "outreachLiteEnter": "Entrar al panel ahora",
+      "outreachLiteEntering": "Entrando…",
+      "outreachLiteOrPassword": "O elige ahora una contraseña personal (opcional):"
     },
     "step2": {
       "title": "📋 Datos del alojamiento",

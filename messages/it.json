@@ -552,6 +552,11 @@
       "passwordChanged": "Password Cambiata",
       "changePassword": "Salva e continua",
       "continueNext": "Continua al passaggio successivo",
+      "outreachLiteTitle": "Il tuo account è pronto",
+      "outreachLiteBody": "Accesso gratuito, senza carta. Potrai configurare struttura, MIR e camere più tardi dal pannello.",
+      "outreachLiteEnter": "Entra nel pannello ora",
+      "outreachLiteEntering": "Accesso…",
+      "outreachLiteOrPassword": "Oppure scegli ora una password personale (opzionale):",
       "introSkipCurrent": "Sei già entrato con il link di attivazione. Scegli solo una nuova password (min. 8 caratteri). Non serve digitar di nuovo quella temporanea.",
       "currentPasswordHint": "Copiala dall’email. Attenzione a 1, I e l. Se hai chiesto un nuovo link, usa solo l’ultima email."
     },
