@@ -68,6 +68,14 @@ function sleep(ms: number) {
 
 async function main() {
   process.env.PUBLIC_OWNER_LEADS_FLOW = process.env.PUBLIC_OWNER_LEADS_FLOW || 'A+B+C';
+  // Nunca cold por Zoho desde este script (usar Resend en prod / CRON).
+  if (!process.env.RESEND_API_KEY?.trim() && !process.env.BREVO_API_KEY?.trim()) {
+    console.error(
+      '[catchup] Falta RESEND_API_KEY (o BREVO). No enviar por Zoho. Usa cron prod ?force=1'
+    );
+    process.exit(1);
+  }
+  process.env.OUTREACH_BLOCK_ZOHO = '1';
   const batch = argNum('--batch', 40);
   const pauseBetweenBatchesMs = argNum('--delay', 90_000); // 90s entre lotes (anti Zoho)
   const cap = PUBLIC_OWNER_LEADS_DAILY_HARD_CAP;

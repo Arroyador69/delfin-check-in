@@ -52,10 +52,14 @@ OTAs (Booking, Airbnb, Kayak…), directorios, federaciones, `*.gob.es`, softwar
 | Flujo | Origen | Estado |
 |-------|--------|--------|
 | **A** | Semillas `seed-spain-vacation-urls` + outbound | Cron |
-| **B** | OSM Overpass por pueblo | Cron (`A+B` default) |
+| **B** | OSM Overpass por pueblo (coords rotativas ES) | Cron (`A+B` default) |
 | **C** | Semillas agencias + OSM/hostales-hoteles ampliados | Cron (`A+B+C`) |
+| **Open data** | JCyL + GVA (casas rurales) → email/web; webs sin mail → extract | Refill cada oleada |
+| **Alerta** | Si cola &lt; 50 tras refill → **Telegram urgente** | Obligatorio |
 
 Flag: `PUBLIC_OWNER_LEADS_FLOW=A+B+C` (default en cron).
+
+**Norma dura:** nunca quedarse sin cola. Tras cada oleada refill a ≥1000. Si Overpass o un CSV fallan, las otras fuentes deben compensar. Ampliar CCAA en `discover-opendata-multi.ts`.
 
 Normas B: `CAPTACION_FLUJO_B_POR_LUGARES.md`  
 Normas C: `CAPTACION_FLUJO_C_AGENCIAS.md`
@@ -88,3 +92,10 @@ La rotación de provincias es automática (`provinces-es.ts` + slot OSM).
 ## KPI panel
 
 Superadmin → Captación: `altas hoy / 20`, `emails hoy / 1000`, opens, undelivered, horario todo el día.
+
+También: **intake** (web + email entrados, por fuente: opendata / osm / extract) para estadísticas futuras y auditoría.
+
+## Copy outreach (confianza)
+
+- Remitente: **Equipo Delfín Check-in** (imagen de empresa seria).
+- Empieza **gratis sin tarjeta**; Plan Check-in (envío automático MIR) = **2€/mes + 2€/propiedad adicional**.

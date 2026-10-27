@@ -95,7 +95,7 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
     params.signupUrl ||
     process.env.OUTREACH_SIGNUP_URL?.trim() ||
     'https://delfincheckin.com/parte-viajeros/#empezar';
-  const sender = params.senderName || 'Alberto · Delfín Check-in';
+  const sender = params.senderName || 'Equipo Delfín Check-in';
   const year = new Date().getFullYear();
   const socials = getOutreachSocialLinks();
   const videoUrl =
@@ -126,10 +126,10 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
 Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del anfitrión: calendario de limpiezas, reservas directas (para reducir comisiones de Airbnb y Booking) y todo el día a día del alojamiento en un solo sitio.`;
 
   const trialLine = isAgency
-    ? `Registraos gratis, sin tarjeta. Un clic y en un minutito estáis dentro. Si más adelante encaja el plan de pago, desde 2€/mes por propiedad.`
+    ? `Empezad gratis, sin tarjeta. En un clic estáis dentro. Cuando queráis el envío automático del parte de viajeros al MIR, el Plan Check-in es 2€/mes + 2€ por propiedad adicional — claro, sin sorpresas.`
     : isHotel
-      ? `Registraos gratis, sin tarjeta. Un clic y en un minutito estáis dentro. Si más adelante encaja, desde 2€/mes.`
-      : `Regístrate gratis (1 propiedad), sin tarjeta. Un clic y en un minutito estás dentro usándolo. Si más adelante te encaja un plan de pago, desde 2€/mes; si no, te quedas en gratis o te das de baja.`;
+      ? `Empezad gratis, sin tarjeta. En un clic estáis dentro. El Plan Check-in (envío automático MIR) es 2€/mes + 2€ por propiedad adicional.`
+      : `Regístrate gratis (1 propiedad), sin tarjeta. Un clic y en un minutito estás dentro. Si más adelante quieres el envío automático del parte de viajeros, el Plan Check-in cuesta 2€/mes + 2€ por cada propiedad adicional; si no, te quedas en gratis o te das de baja.`;
 
   const ctaLabel = 'Regístrate gratis — sin tarjeta';
 
@@ -326,6 +326,9 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
               </table>
               <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#0369a1;font-weight:700;">
                 Empieza gratis hoy · sin tarjeta · sin compromiso
+              </p>
+              <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45;color:#64748b;">
+                Plan Check-in (envío automático MIR): 2€/mes + 2€/propiedad adicional
               </p>
               <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.4;color:#94a3b8;">
                 Si el botón no funciona: <a href="${escapeAttr(signup)}" style="color:#0284c7;word-break:break-all;">abrir enlace</a>

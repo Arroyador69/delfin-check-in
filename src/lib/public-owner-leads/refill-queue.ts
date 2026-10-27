@@ -1,6 +1,7 @@
 /**
- * Tras cada oleada de envío: rellenar cola hasta MIN_QUEUED (~150).
- * Datos abiertos + semillas + extract. Nunca dejar recámara vacía.
+ * Tras cada oleada de envío: rellenar cola hasta MIN_QUEUED (~1000).
+ * Datos abiertos multi-CCAA + semillas + OSM + extract.
+ * Nunca dejar recámara vacía; si falla → Telegram alerta.
  */
 
 import { sql } from '@/lib/db';
@@ -13,7 +14,7 @@ import {
   ensureSpainVacationSourceQueue,
   recycleEmptySources,
 } from './ensure-source-queue';
-import { importJcylOpenDataToQueue } from './import-opendata';
+import { importAllOpenDataToQueue } from './import-opendata';
 import { extractPublicEmailsFromUrl, normalizeUrl } from './extract-web';
 import { sleep } from './fetch-html';
 import {
@@ -23,6 +24,7 @@ import {
 } from './emails';
 import { isBlockedOutreachHost } from './blocked-hosts';
 import { hostSuggestsNonVacation } from './spain-vacation-filter';
+import { notifyQueueStarvation } from './captacion-telegram';
 
 export type RefillResult = {
   target: number;
@@ -31,7 +33,9 @@ export type RefillResult = {
   opendataQueued: number;
   extracted: number;
   recycled: number;
+  sourcesQueued?: number;
   errors: string[];
+  starvationAlerted?: boolean;
 };
 
 async function countQueued(): Promise<number> {
@@ -60,21 +64,30 @@ async function promoteNewToQueued(limit: number): Promise<number> {
 }
 
 /**
- * Rellena hasta `target` (default MIN_QUEUED=150). Idempotente.
+ * Rellena hasta `target` (default MIN_QUEUED=1000). Idempotente.
  */
 export async function refillQueuedStock(opts?: {
   target?: number;
   extractLimit?: number;
   opendataLimit?: number;
+  /** Si true, alerta Telegram cuando no se alcanza un mínimo usable. */
+  alertIfStarved?: boolean;
+  /** Umbral bajo el cual se considera “sin combustible”. */
+  starveBelow?: number;
 }): Promise<RefillResult> {
   const target = opts?.target ?? PUBLIC_OWNER_LEADS_MIN_QUEUED;
-  const extractLimit = opts?.extractLimit ?? Math.max(PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN, 35);
-  const opendataLimit = opts?.opendataLimit ?? 100;
+  const extractLimit =
+    opts?.extractLimit ?? Math.max(PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN, 40);
+  const opendataLimit = opts?.opendataLimit ?? 200;
+  const alertIfStarved = opts?.alertIfStarved !== false;
+  const starveBelow = opts?.starveBelow ?? 50;
   const errors: string[] = [];
   const queuedBefore = await countQueued();
   let opendataQueued = 0;
+  let sourcesQueued = 0;
   let extracted = 0;
   let recycled = 0;
+  let starvationAlerted = false;
 
   if (queuedBefore >= target) {
     return {
@@ -84,39 +97,49 @@ export async function refillQueuedStock(opts?: {
       opendataQueued: 0,
       extracted: 0,
       recycled: 0,
+      sourcesQueued: 0,
       errors: [],
     };
   }
 
+  const emergency = queuedBefore < starveBelow;
+
   try {
     await ensureSpainVacationSourceQueue();
     await ensureSpainAgencySourceQueue();
-    recycled = await recycleEmptySources(60);
+    recycled = await recycleEmptySources(
+      emergency ? 180 : 80,
+      emergency ? 0 : 6
+    );
   } catch (e) {
     errors.push(`seed:${e instanceof Error ? e.message : String(e)}`);
   }
 
   try {
-    const need = target - (await countQueued());
-    if (need > 0) {
-      const od = await importJcylOpenDataToQueue({
-        limit: Math.min(opendataLimit, Math.max(need, 40)),
-      });
-      opendataQueued = od.queued;
+    const od = await importAllOpenDataToQueue({
+      limitPerSource: Math.max(80, Math.floor(opendataLimit / 2)),
+      websiteLimitPerSource: emergency ? 200 : 120,
+    });
+    opendataQueued = od.queued;
+    sourcesQueued = od.sourcesQueued;
+    for (const r of od.results) {
+      errors.push(
+        `opendata:${r.source}:queued=${r.queued}:webs=${r.sourcesQueued}`
+      );
     }
   } catch (e) {
     errors.push(`opendata:${e instanceof Error ? e.message : String(e)}`);
   }
 
-  // OSM soft (no tumbar)
+  // OSM soft (no tumbar el refill si Overpass cae)
   try {
     const { discoverOwnerSitesByPlace } = await import('./discover-by-place');
     const disc = await discoverOwnerSitesByPlace({
-      maxPlaces: 5,
-      maxCandidates: 25,
-      delayMs: 300,
-      deadlineMs: 45_000,
-      waveOffset: Math.floor(Date.now() / 60_000) % 4,
+      maxPlaces: emergency ? 10 : 6,
+      maxCandidates: emergency ? 60 : 35,
+      delayMs: 280,
+      deadlineMs: emergency ? 70_000 : 45_000,
+      waveOffset: Math.floor(Date.now() / 60_000) % 8,
     });
     for (const url of disc.candidateUrls) {
       await sql`
@@ -145,6 +168,9 @@ export async function refillQueuedStock(opts?: {
         ON CONFLICT (email) DO NOTHING
       `;
     }
+    errors.push(
+      `osm:places=${disc.places.length}:webs=${disc.candidateUrls.length}:emails=${disc.emailsFromOsm.length}`
+    );
   } catch (e) {
     errors.push(`osm:${e instanceof Error ? e.message : String(e)}`);
   }
@@ -190,8 +216,13 @@ export async function refillQueuedStock(opts?: {
       let found = 0;
       for (const lead of leads) {
         const email = lead.email.toLowerCase();
-        const domain = (lead.domain || domainFromUrl(lead.source_url) || '').replace(/^www\./, '');
-        if (!isPlausiblePublicEmail(email) || scoreEmailForSource(email, lead.source_url) < 0) continue;
+        const domain = (lead.domain || domainFromUrl(lead.source_url) || '').replace(
+          /^www\./,
+          ''
+        );
+        if (!isPlausiblePublicEmail(email) || scoreEmailForSource(email, lead.source_url) < 0) {
+          continue;
+        }
         if (usedEmail.has(email) || (domain && usedDomain.has(domain))) continue;
         const aud = lead.audience || 'owner';
         const note = `refill:${aud}:${new Date().toISOString().slice(0, 10)}`;
@@ -222,7 +253,7 @@ export async function refillQueuedStock(opts?: {
         WHERE id = ${row.id}::uuid
       `;
     }
-    await sleep(350);
+    await sleep(300);
   }
 
   await promoteNewToQueued(target);
@@ -231,14 +262,41 @@ export async function refillQueuedStock(opts?: {
   const mid = await countQueued();
   if (mid < target) {
     try {
-      const od2 = await importJcylOpenDataToQueue({ limit: target - mid + 20 });
+      const od2 = await importAllOpenDataToQueue({
+        limitPerSource: Math.min(200, target - mid + 40),
+        websiteLimitPerSource: 80,
+      });
       opendataQueued += od2.queued;
+      sourcesQueued += od2.sourcesQueued;
     } catch (e) {
       errors.push(`opendata2:${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
   const queuedAfter = await countQueued();
+
+  if (alertIfStarved && queuedAfter < starveBelow) {
+    try {
+      const sent = await sql`
+        SELECT COUNT(*)::int AS n FROM public_owner_leads
+        WHERE status = 'sent'
+          AND sent_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+            AT TIME ZONE 'Europe/Madrid'
+      `;
+      const tg = await notifyQueueStarvation({
+        queuedAfter,
+        sentToday: Number(sent.rows[0]?.n || 0),
+        target,
+        detail: errors.slice(0, 4).join(' · '),
+      });
+      starvationAlerted = tg.ok;
+    } catch (e) {
+      errors.push(
+        `starvation-tg:${e instanceof Error ? e.message : String(e)}`
+      );
+    }
+  }
+
   return {
     target,
     queuedBefore,
@@ -246,6 +304,8 @@ export async function refillQueuedStock(opts?: {
     opendataQueued,
     extracted,
     recycled,
-    errors: errors.slice(0, 12),
+    sourcesQueued,
+    errors: errors.slice(0, 16),
+    starvationAlerted,
   };
 }

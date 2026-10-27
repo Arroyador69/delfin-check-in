@@ -102,6 +102,38 @@ export async function GET(req: NextRequest) {
       FROM public_owner_leads
     `;
 
+    /** Entradas recientes (web + mail) para estadísticas / auditoría de captación. */
+    const intakeRecent = await sql`
+      SELECT
+        email,
+        domain,
+        source_url,
+        status,
+        left(coalesce(notes, ''), 80) AS notes,
+        created_at::text
+      FROM public_owner_leads
+      WHERE created_at >= NOW() - INTERVAL '7 days'
+      ORDER BY created_at DESC
+      LIMIT 40
+    `;
+    const intakeBySource = await sql`
+      SELECT
+        CASE
+          WHEN notes ILIKE 'opendata:gva%' THEN 'opendata:gva'
+          WHEN notes ILIKE 'opendata:jcyl%' OR notes ILIKE 'opendata:%' THEN 'opendata'
+          WHEN notes ILIKE 'refill-osm%' OR notes ILIKE '%osm%' THEN 'osm'
+          WHEN notes ILIKE 'refill:%' OR notes ILIKE 'extract:%' THEN 'extract'
+          WHEN notes ILIKE '%flow-c%' OR notes ILIKE '%agency%' THEN 'agency'
+          ELSE 'other'
+        END AS source_kind,
+        COUNT(*)::int AS n
+      FROM public_owner_leads
+      WHERE created_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+        AT TIME ZONE 'Europe/Madrid'
+      GROUP BY 1
+      ORDER BY n DESC
+    `;
+
     const byDayRaw = await sql`
       SELECT
         to_char(
@@ -231,6 +263,10 @@ export async function GET(req: NextRequest) {
       by_day: byDay.rows,
       filter: { day: dayFilter || null, status: statusFilter || null },
       sources,
+      intake: {
+        by_source_today: intakeBySource.rows,
+        recent: intakeRecent.rows,
+      },
       leads: rows.rows,
     });
   } catch (e) {
