@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
       FROM public_owner_leads
     `;
 
-    const byDay = await sql`
+    const byDayRaw = await sql`
       SELECT
         to_char(
           (sent_at AT TIME ZONE 'Europe/Madrid')::date,
@@ -120,6 +120,24 @@ export async function GET(req: NextRequest) {
       ORDER BY 1 DESC
       LIMIT 30
     `;
+
+    // Siempre mostrar el día Madrid de hoy (aunque vaya 0) — evita “hoy no aparece”
+    const todayMadrid = await sql`
+      SELECT to_char((NOW() AT TIME ZONE 'Europe/Madrid')::date, 'YYYY-MM-DD') AS day
+    `;
+    const todayKey = String(todayMadrid.rows[0]?.day || '');
+    const byDayRows = [...byDayRaw.rows];
+    if (todayKey && !byDayRows.some((r) => String(r.day) === todayKey)) {
+      byDayRows.unshift({
+        day: todayKey,
+        sent: 0,
+        opened: 0,
+        clicked: 0,
+        signed_up: 0,
+        bounced: 0,
+      });
+    }
+    const byDay = { rows: byDayRows };
 
     let rows;
     if (dayFilter && /^\d{4}-\d{2}-\d{2}$/.test(dayFilter)) {

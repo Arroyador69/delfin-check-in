@@ -71,11 +71,14 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
     }
 
     const maxSend = opts?.maxSend ?? PUBLIC_OWNER_LEADS_WAVE_MAX;
+    // Cron: extractLimit bajo por defecto; daily-run ya pone 0 si cola ≥ budget.
     const outreach = await runDailyPublicOwnerLeads({
       dryRun,
       wave,
       maxSend,
-      extractLimit: opts?.extractLimit ?? PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
+      extractLimit:
+        opts?.extractLimit ??
+        (wave === 'prepare' ? PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN : 0),
     });
 
     let telegram: unknown = null;

@@ -1088,25 +1088,34 @@ export async function sendOnboardingEmail(params: {
 
     return { success: true, messageId: result.messageId };
   } catch (error: any) {
+    const { isSmtpTransientOrRateLimitError: isTransient } = await import(
+      '@/lib/email-suppression'
+    ).catch(() => ({ isSmtpTransientOrRateLimitError: () => false }));
+    const transient = Boolean(isTransient?.(error));
+
+    // Rate-limit Zoho ≠ fallo definitivo: dejar pending para reintento, no "fallido" duro.
     if (trackingId) {
       try {
         await sql`
           UPDATE email_tracking
           SET
-            status = 'failed',
+            status = ${transient ? 'pending' : 'failed'},
             metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
               error: error?.message || 'send_failed',
+              retryable: transient,
+              reason: transient ? 'smtp_rate_limit_or_transient' : 'send_failed',
             })}::jsonb,
             updated_at = NOW()
           WHERE id = ${trackingId}::uuid
         `;
       } catch (e) {
-        console.warn('⚠️ [SEND ONBOARDING EMAIL] No se pudo marcar email_tracking como failed:', e);
+        console.warn('⚠️ [SEND ONBOARDING EMAIL] No se pudo actualizar email_tracking tras error:', e);
       }
     }
 
     console.error('❌ [SEND ONBOARDING EMAIL] Error enviando email de onboarding:', {
       error: error.message,
+      transient,
       stack: error.stack,
       code: error.code,
       command: error.command,
@@ -1119,8 +1128,10 @@ export async function sendOnboardingEmail(params: {
     });
 
     try {
-      const { maybeSuppressOnSmtpBounce } = await import('@/lib/email-suppression');
-      await maybeSuppressOnSmtpBounce(params.to, error);
+      if (!transient) {
+        const { maybeSuppressOnSmtpBounce } = await import('@/lib/email-suppression');
+        await maybeSuppressOnSmtpBounce(params.to, error);
+      }
     } catch {
       // ignore
     }

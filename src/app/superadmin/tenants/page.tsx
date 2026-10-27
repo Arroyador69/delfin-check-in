@@ -44,7 +44,7 @@ function onboardingLabel(status?: string | null): string {
   const s = String(status || '').toLowerCase()
   // Sin fila en email_tracking: el tenant existe pero no se registró el mail de acceso
   if (!s) return 'sin email enviado'
-  if (s === 'pending') return 'pendiente envío'
+  if (s === 'pending') return 'pendiente reintento'
   if (s === 'sent') return 'enviado (sin abrir)'
   if (s === 'delivered') return 'entregado'
   if (s === 'opened') return 'abrió el email'
@@ -60,6 +60,9 @@ function onboardingTitle(status?: string | null, completed?: boolean): string {
     return completed
       ? 'No hay fila en email_tracking (alta antigua o sin track), pero el wizard ya está completado.'
       : 'Sin registro del email de acceso: no se envió o no se trackeó. Si entró por 1-clic del mail frío, la cuenta existe igual — usa «Reenviar onboarding» solo si necesita contraseña/enlace.'
+  }
+  if (s === 'pending') {
+    return 'Envío aplazado (p.ej. rate-limit Zoho). La cuenta existe. «Reenviar onboarding» lo intenta de nuevo; el CTA 1-clic ya deja entrar al panel.'
   }
   if (s === 'failed') {
     return 'Falló el SMTP del email de bienvenida (rate-limit Zoho u otro). La cuenta SÍ existe. El CTA 1-clic deja entrar sin ese mail. Usa «Reenviar onboarding» para mandar contraseña temporal de nuevo.'

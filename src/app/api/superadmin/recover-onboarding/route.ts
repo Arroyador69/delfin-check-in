@@ -54,7 +54,20 @@ export async function POST(req: NextRequest) {
     await liftFalseSmtpBounceSuppression(email);
 
     const { token, tempPassword } = await issueFreshOnboardingCredentials(owner.user_id);
-    const onboardingUrl = buildOnboardingUrl(token, locale.startsWith('es') ? 'es' : locale.slice(0, 2));
+    let outreachLite = false;
+    try {
+      const notesR = await sql`
+        SELECT notes FROM tenants WHERE id = ${owner.tenant_id}::uuid LIMIT 1
+      `;
+      outreachLite = /outreach|one.?click|owner_outreach/i.test(String(notesR.rows[0]?.notes || ''));
+    } catch {
+      /* ignore */
+    }
+    const onboardingUrl = buildOnboardingUrl(
+      token,
+      locale.startsWith('es') ? 'es' : locale.slice(0, 2),
+      outreachLite ? { src: 'outreach' } : undefined
+    );
 
     try {
       const mail = await sendOnboardingEmail({
@@ -74,7 +87,7 @@ export async function POST(req: NextRequest) {
             onboardingUrl,
             tempPassword,
             resetOnboardingFlow,
-            note: 'Puedes copiar el enlace y la contraseña temporal y enviárselos al cliente por otro canal.',
+            note: 'Puedes copiar el enlace y la contraseña temporal y enviárselos al cliente por otro canal. Si el error es rate-limit Zoho, espera unos minutos y reintenta; el enlace de abajo ya sirve para entrar.',
           },
           { status: 502 }
         );

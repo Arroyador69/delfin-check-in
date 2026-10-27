@@ -40,14 +40,16 @@ export async function retryFailedOnboardingEmails(opts?: {
 
   const emailFilter = opts?.email?.trim().toLowerCase() || null;
 
+  // Incluye failed + pending (rate-limit Zoho no debe quedar como “fallido” duro).
   const failed = emailFilter
     ? await sql`
         SELECT DISTINCT ON (LOWER(TRIM(recipient_email)))
           id::text AS id,
           recipient_email,
-          tenant_id::text AS tenant_id
+          tenant_id::text AS tenant_id,
+          status
         FROM email_tracking
-        WHERE status = 'failed'
+        WHERE status IN ('failed', 'pending')
           AND email_type = 'onboarding'
           AND LOWER(TRIM(recipient_email)) = ${emailFilter}
           AND created_at >= NOW() - INTERVAL '14 days'
@@ -58,9 +60,10 @@ export async function retryFailedOnboardingEmails(opts?: {
         SELECT DISTINCT ON (LOWER(TRIM(recipient_email)))
           id::text AS id,
           recipient_email,
-          tenant_id::text AS tenant_id
+          tenant_id::text AS tenant_id,
+          status
         FROM email_tracking
-        WHERE status = 'failed'
+        WHERE status IN ('failed', 'pending')
           AND email_type = 'onboarding'
           AND created_at >= NOW() - INTERVAL '7 days'
         ORDER BY LOWER(TRIM(recipient_email)), created_at DESC
@@ -97,7 +100,22 @@ export async function retryFailedOnboardingEmails(opts?: {
       }
 
       const { token, tempPassword } = await issueFreshOnboardingCredentials(owner.user_id);
-      const onboardingUrl = buildOnboardingUrl(token, 'es');
+      // Lite si viene de outreach / 1-clic (notas tenant o waitlist)
+      let outreachLite = false;
+      try {
+        const notesR = await sql`
+          SELECT notes FROM tenants WHERE id = ${owner.tenant_id}::uuid LIMIT 1
+        `;
+        const notes = String(notesR.rows[0]?.notes || '');
+        outreachLite = /outreach|one.?click|owner_outreach/i.test(notes);
+      } catch {
+        /* ignore */
+      }
+      const onboardingUrl = buildOnboardingUrl(
+        token,
+        'es',
+        outreachLite ? { src: 'outreach' } : undefined
+      );
       const mail = await sendOnboardingEmail({
         to: email,
         onboardingUrl,
@@ -110,7 +128,7 @@ export async function retryFailedOnboardingEmails(opts?: {
       retried++;
       if (mail?.success) {
         sent++;
-        // Marcar el tracking fallido anterior como superseded (best-effort)
+        // Marcar el tracking fallido/pending anterior como superseded (best-effort)
         try {
           await sql`
             UPDATE email_tracking
@@ -119,16 +137,28 @@ export async function retryFailedOnboardingEmails(opts?: {
                 superseded_by_retry: true,
               })}::jsonb,
               updated_at = NOW()
-            WHERE id = ${row.id}::uuid AND status = 'failed'
+            WHERE id = ${row.id}::uuid AND status IN ('failed', 'pending')
           `;
         } catch {
           /* ignore */
         }
       } else {
         errors.push(`${email}:${mail?.error || 'no_success'}`);
+        // Si Zoho sigue a rate-limit, no martillar el resto del lote
+        if (/Unusual sending|5\.4\.6|try after sometime|rate.?limit/i.test(String(mail?.error || ''))) {
+          errors.push('abort:zoho-rate-limit');
+          break;
+        }
       }
+      // Pausa corta entre reenvíos (mismo buzón SMTP que outreach)
+      await new Promise((r) => setTimeout(r, 1800));
     } catch (e) {
-      errors.push(`${email}:${e instanceof Error ? e.message : String(e)}`);
+      const msg = e instanceof Error ? e.message : String(e);
+      errors.push(`${email}:${msg}`);
+      if (/Unusual sending|5\.4\.6|try after sometime|rate.?limit/i.test(msg)) {
+        errors.push('abort:zoho-rate-limit');
+        break;
+      }
     }
   }
 
