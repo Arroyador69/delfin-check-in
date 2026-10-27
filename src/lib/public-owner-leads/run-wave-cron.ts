@@ -30,6 +30,7 @@ export type WaveCronResult = {
   engagement?: unknown;
   outreach?: Awaited<ReturnType<typeof runDailyPublicOwnerLeads>>;
   telegram?: unknown;
+  refillDeferred?: unknown;
   error?: string;
 };
 
@@ -71,21 +72,22 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
     }
 
     const maxSend = opts?.maxSend ?? PUBLIC_OWNER_LEADS_WAVE_MAX;
-    // Cron: extractLimit bajo por defecto; daily-run ya pone 0 si cola ≥ budget.
+    const progressKind = isProgressTelegramSlot(slot);
+    // En slots de Telegram: enviar oleada SIN refill → avisar → refill.
+    // Si el refill timeout, igual llega el progreso (el cron dedicado también cubre 12/16).
     const outreach = await runDailyPublicOwnerLeads({
       dryRun,
       wave,
       maxSend,
+      skipRefill: Boolean(progressKind) && !dryRun,
       extractLimit:
         opts?.extractLimit ??
         (wave === 'prepare' ? PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN : 0),
     });
 
     let telegram: unknown = null;
-    const progressKind = isProgressTelegramSlot(slot);
 
     if (!dryRun && progressKind && !outreach.skippedBecauseGoalMet) {
-      // Solo 2 progreso/día: fin mañana (12:00) y media tarde (16:00)
       telegram = await notifyCaptacionWave({
         wave: 'progress',
         waveSent: outreach.sent,
@@ -105,6 +107,24 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
       telegram = { skippedNotify: true, reason: 'no_telegram_slot' };
     }
 
+    // Refill diferido tras Telegram (slots progreso)
+    let refillDeferred: unknown = null;
+    if (!dryRun && progressKind && !outreach.skippedBecauseGoalMet) {
+      try {
+        const { refillQueuedStock } = await import('./refill-queue');
+        const { PUBLIC_OWNER_LEADS_MIN_QUEUED } = await import('./constants');
+        refillDeferred = await refillQueuedStock({
+          target: PUBLIC_OWNER_LEADS_MIN_QUEUED,
+          extractLimit: 28,
+          opendataLimit: 120,
+        });
+      } catch (e) {
+        refillDeferred = {
+          error: e instanceof Error ? e.message : String(e),
+        };
+      }
+    }
+
     return {
       success: true,
       wave,
@@ -113,6 +133,7 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
       engagement,
       outreach,
       telegram,
+      refillDeferred,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

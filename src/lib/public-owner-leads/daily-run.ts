@@ -249,11 +249,14 @@ export async function runDailyPublicOwnerLeads(opts?: {
   extractLimit?: number;
   /** Franja del día (morning…night) o prepare. Meta 20 → skip envío, cola para mañana. */
   wave?: OutreachWave;
+  /** Si true, no refill al final (p.ej. para mandar Telegram antes del scrape). */
+  skipRefill?: boolean;
 }): Promise<DailyOutreachResult> {
   const dryRun = Boolean(opts?.dryRun);
   const wave = normalizeWave(opts?.wave);
   const cap = dailyCap();
   const errors: string[] = [];
+  const skipRefill = Boolean(opts?.skipRefill);
 
   const ready = await ensureTables();
   if (!ready) {
@@ -629,9 +632,10 @@ export async function runDailyPublicOwnerLeads(opts?: {
     }
   }
 
-  // NORMA: tras CADA envío (o prepare), rellenar cola hasta ~150. Nunca a 0.
+  // NORMA: tras CADA envío (o prepare), rellenar cola. Nunca a 0.
+  // skipRefill: el caller manda Telegram primero y rellena después (anti-timeout).
   let refillSummary: DailyOutreachResult['refill'];
-  if (!dryRun) {
+  if (!dryRun && !skipRefill) {
     try {
       const { refillQueuedStock } = await import('./refill-queue');
       const refill = await refillQueuedStock({
@@ -659,6 +663,8 @@ export async function runDailyPublicOwnerLeads(opts?: {
         /* ignore */
       }
     }
+  } else if (skipRefill) {
+    errors.push('refill:deferred');
   }
 
   return {
