@@ -128,7 +128,13 @@ export async function sendTrackedOutreachLead(lead: {
     if (trackingId) {
       await sql`
         UPDATE email_tracking
-        SET status = 'sent', message_id = ${info.messageId || null}, updated_at = NOW()
+        SET
+          status = 'sent',
+          message_id = ${info.messageId || null},
+          metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+            provider: info.provider,
+          })}::jsonb,
+          updated_at = NOW()
         WHERE id = ${trackingId}::uuid
       `;
     }
@@ -141,16 +147,20 @@ export async function sendTrackedOutreachLead(lead: {
         updated_at = NOW(),
         tracking_id = COALESCE(${trackingId || null}::uuid, tracking_id),
         last_error = NULL,
-        notes = COALESCE(notes, '') || ${` | sent:${new Date().toISOString().slice(0, 10)}`}
+        notes = COALESCE(notes, '') || ${` | sent:${new Date().toISOString().slice(0, 10)}:${info.provider}`}
       WHERE id = ${lead.id}::uuid
     `;
 
     return { ok: true, trackingId: trackingId || undefined };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    // Rate-limit Zoho / temporal: dejar en cola para reintento (NO skipped).
+    const flaggedRetryable = Boolean(
+      e && typeof e === 'object' && 'retryable' in e && (e as { retryable?: boolean }).retryable
+    );
+    // Rate-limit Zoho/Resend/Brevo / temporal: dejar en cola para reintento (NO skipped).
     const retryable =
-      /Unusual sending activity|550 5\.4\.6|try after sometime|rate.?limit|temporar|timeout|ECONNRESET|ETIMEDOUT/i.test(
+      flaggedRetryable ||
+      /Unusual sending activity|550 5\.4\.6|try after sometime|rate.?limit|too many|429|temporar|timeout|ECONNRESET|ETIMEDOUT/i.test(
         msg
       );
     if (trackingId) {

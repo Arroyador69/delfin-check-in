@@ -18,22 +18,48 @@ Embudo: **cold → 1 clic alta FREE → onboarding sencillo → uso → plan de 
 
 ---
 
-## 2. Normas Zoho-safe (obligatorio)
+## 2. Proveedor de envío (obligatorio) + ritmo
 
-Zoho Mail externos: **50–500 emails/hora** (dinámico). Bulk/burst **no** permitido.  
-[Rates & limits](https://www.zoho.com/mail/help/adminconsole/rates-and-limits.html)
+### Zoho Mail **no** es para cold/bulk
+
+La [usage policy de Zoho Mail](https://www.zoho.com/mail/help/usage-policy.html) prohíbe promotional / bulk / marketing / automated mass.  
+Si mandas cold por `smtp.zoho.*` → bloqueos “tasa excedida” / Unusual sending.  
+**Usar Resend o Brevo** para outreach. Zoho solo para correo personal/ligero (y desbloquear `alberto@` en UnblockMe si cae).
+
+| Variable Vercel | Uso |
+|-----------------|-----|
+| `RESEND_API_KEY` | **Recomendado** — prioridad auto |
+| `RESEND_FROM` o `SMTP_FROM_OUTREACH` | p.ej. `Delfín Check-in <hola@delfincheckin.com>` (dominio verificado en Resend) |
+| `BREVO_API_KEY` | Alternativa si no hay Resend |
+| `OUTREACH_PROVIDER` | `auto` (default) · `resend` · `brevo` · `smtp` |
+| `OUTREACH_BLOCK_ZOHO=1` | Tras migrar: falla si aún apunta a Zoho |
+| `OUTREACH_ALLOW_ZOHO=1` | Solo emergencia |
+
+Código: `send-smtp.ts` (`resolveOutreachProvider` / `sendOutreachMail`).
+
+### Ritmo (sigue siendo “anti-burst”)
 
 | Parámetro | Valor |
 |-----------|--------|
 | Por oleada | **50** |
 | Oleadas / día | **20** (50×20 = 1000) |
-| Delay SMTP | **1.8 s** |
+| Delay entre mails | **1.8 s** |
 | Ventana Madrid | **08:00–17:30** cada **30 min** |
 | Prepare | ~**07:00** (solo cola, no envía) |
 | Telegram | Solo **3/día**: **12:00** + **16:00** + cierre **21:00** |
 
-Código: `src/lib/public-owner-leads/constants.ts`, `wave-schedule.ts`, `run-wave-cron.ts`.  
+Código: `constants.ts`, `wave-schedule.ts`, `run-wave-cron.ts`.  
 Cron Vercel: `public-owner-leads-wave` → `0,30 7-16 * * *` (UTC/CET).
+
+### Setup Resend (10 min) — hacer hoy
+
+1. [resend.com](https://resend.com) → verificar dominio `delfincheckin.com` (SPF/DKIM).
+2. Vercel Production: `RESEND_API_KEY=re_…` + `SMTP_FROM_OUTREACH=Delfín Check-in <hola@delfincheckin.com>`.
+3. Redeploy. Superadmin → Captación debe mostrar **Proveedor: RESEND** (sin aviso Zoho).
+4. Cuando estabilice: `OUTREACH_BLOCK_ZOHO=1`.
+5. Probe local: `npx tsx scripts/public-owner-leads/probe-outreach-provider.ts --send --to=contacto@delfincheckin.com`
+
+Alternativa: `BREVO_API_KEY` (mismo from verificado).
 
 ---
 

@@ -1,8 +1,8 @@
 /**
- * Captación propietarios — normas Zoho-safe (referencia multi-proyecto).
+ * Captación propietarios — ritmo anti-burst (referencia multi-proyecto).
  *
- * Zoho Mail externos: 50–500/h (dinámico). Bulk/burst no permitido.
- * → Oleadas pequeñas (50) cada ~30 min · delay 1.8s · tope día 1000.
+ * Preferir Resend/Brevo para cold (Zoho Mail usage policy prohíbe bulk/marketing).
+ * Oleadas 50 cada ~30 min · delay 1.8s · tope día 1000.
  * Si altas ≥ 20 → no se envía más ese día (cola queda para mañana).
  */
 
