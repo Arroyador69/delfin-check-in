@@ -326,8 +326,26 @@ export async function runDailyPublicOwnerLeads(opts?: {
   const waveMax = opts?.maxSend ?? waveMaxDefault(wave);
   const budget = Math.max(0, Math.min(cap - sentTodayBefore, waveMax));
 
-  // Autonomía: semillas + reabrir fuentes vacías (rotar provincias vía OSM/wave)
-  if (!dryRun) {
+  // Contar cola YA: si hay stock para la oleada, saltar seed/OSM/extract y ENVIAR.
+  // (Antes se scrapeba primero → timeout Vercel / 0 enviados con cola llena.)
+  let queuedAhead = 0;
+  try {
+    const q = await sql`
+      SELECT COUNT(*)::int AS n FROM public_owner_leads
+      WHERE status = 'queued' AND opted_out = false
+    `;
+    queuedAhead = Number(q.rows[0]?.n || 0);
+  } catch {
+    queuedAhead = 0;
+  }
+  const sendBudgetPreview = wave === 'prepare' ? 0 : budget;
+  const queueCoversWave =
+    wave !== 'prepare' && sendBudgetPreview > 0 && queuedAhead >= sendBudgetPreview;
+  const needDiscover =
+    wave === 'prepare' || (!queueCoversWave && queuedAhead < Math.max(budget * 2, 80));
+
+  // Autonomía: semillas + reabrir fuentes vacías — solo si hace falta stock
+  if (!dryRun && !queueCoversWave) {
     try {
       const seeded = await ensureSpainVacationSourceQueue();
       if (seeded.inserted > 0) {
@@ -338,6 +356,8 @@ export async function runDailyPublicOwnerLeads(opts?: {
     } catch (e) {
       errors.push(`seed:${e instanceof Error ? e.message : String(e)}`);
     }
+  } else if (!dryRun && queueCoversWave) {
+    errors.push(`seed:skip cola=${queuedAhead}≥budget=${sendBudgetPreview} (prioridad enviar)`);
   }
 
   // Flujo A+B+C por defecto: semillas + OSM + agencias.
@@ -357,7 +377,7 @@ export async function runDailyPublicOwnerLeads(opts?: {
     wave === 'evening' ||
     wave === 'night';
 
-  if (!dryRun && useFlowC) {
+  if (!dryRun && useFlowC && !queueCoversWave) {
     try {
       const agencySeed = await ensureSpainAgencySourceQueue();
       if (agencySeed.inserted > 0) {
@@ -367,22 +387,6 @@ export async function runDailyPublicOwnerLeads(opts?: {
       errors.push(`flow-c:soft-fail:${e instanceof Error ? e.message : String(e)}`);
     }
   }
-
-  // Si ya hay cola suficiente para esta oleada, no gastar el timeout en OSM:
-  // prioridad = enviar hasta 50 y luego refill.
-  let queuedAhead = 0;
-  if (!dryRun) {
-    try {
-      const q = await sql`
-        SELECT COUNT(*)::int AS n FROM public_owner_leads
-        WHERE status = 'queued' AND opted_out = false
-      `;
-      queuedAhead = Number(q.rows[0]?.n || 0);
-    } catch {
-      queuedAhead = 0;
-    }
-  }
-  const needDiscover = wave === 'prepare' || queuedAhead < Math.max(budget * 2, 80);
 
   if (!dryRun && useFlowB && needDiscover) {
     try {
@@ -458,28 +462,18 @@ export async function runDailyPublicOwnerLeads(opts?: {
   // Si ya hay ≥ budget en cola, NO scrapear antes de enviar (evita timeout Vercel
   // y deja la oleada en 0 enviados). El refill post-envío recupera MIN_QUEUED.
   let extractLimit = opts?.extractLimit ?? PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN;
-  if (!dryRun) {
-    try {
-      const qn = await sql`
-        SELECT COUNT(*)::int AS n FROM public_owner_leads
-        WHERE status = 'queued' AND opted_out = false
-      `;
-      const queuedNow = Number(qn.rows[0]?.n || 0);
-      const sendBudgetPreview = wave === 'prepare' ? 0 : budget;
-      if (wave !== 'prepare' && sendBudgetPreview > 0 && queuedNow >= sendBudgetPreview) {
-        extractLimit = 0;
-        errors.push(
-          `extract:skip cola=${queuedNow}≥budget=${sendBudgetPreview} (prioridad enviar; refill después)`
-        );
-      } else if (queuedNow < PUBLIC_OWNER_LEADS_MIN_QUEUED || wave === 'prepare') {
-        extractLimit = Math.max(
-          extractLimit,
-          wave === 'prepare' ? 45 : 32
-        );
-        errors.push(`stock:queued=${queuedNow}<${PUBLIC_OWNER_LEADS_MIN_QUEUED} → extract↑${extractLimit}`);
-      }
-    } catch {
-      /* ignore */
+  const queuedNow = queuedAhead;
+  if (queueCoversWave || (wave !== 'prepare' && sendBudgetPreview > 0 && queuedNow >= sendBudgetPreview)) {
+    extractLimit = 0;
+    errors.push(
+      `extract:skip cola=${queuedNow}≥budget=${sendBudgetPreview} (prioridad enviar; refill después)`
+    );
+  } else if (queuedNow < PUBLIC_OWNER_LEADS_MIN_QUEUED || wave === 'prepare') {
+    if (opts?.extractLimit == null || opts.extractLimit > 0) {
+      extractLimit = Math.max(extractLimit, wave === 'prepare' ? 45 : 32);
+      errors.push(
+        `stock:queued=${queuedNow}<${PUBLIC_OWNER_LEADS_MIN_QUEUED} → extract↑${extractLimit}`
+      );
     }
   }
 
