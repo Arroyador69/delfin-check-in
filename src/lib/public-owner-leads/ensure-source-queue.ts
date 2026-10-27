@@ -89,10 +89,15 @@ export async function ensureSpainAgencySourceQueue(): Promise<{
 /**
  * Reabre fuentes sin email (done/failed con 0) para reintentar con filtro nuevo.
  * Así el cron no se queda sin pending aunque las semillas ya estén “gastadas”.
+ * `minAgeHours`: en emergencia (cola 0) usar 0 para reintentar ya.
  */
-export async function recycleEmptySources(limit = 60): Promise<number> {
+export async function recycleEmptySources(
+  limit = 60,
+  minAgeHours = 12
+): Promise<number> {
   const sourcesMeta = await sql`SELECT to_regclass('public.public_owner_lead_sources') AS reg`;
   if (!sourcesMeta.rows[0]?.reg) return 0;
+  const hours = Math.max(0, minAgeHours);
   const r = await sql`
     WITH cte AS (
       SELECT id
@@ -101,7 +106,7 @@ export async function recycleEmptySources(limit = 60): Promise<number> {
         AND COALESCE(emails_found, 0) = 0
         AND (
           last_scraped_at IS NULL
-          OR last_scraped_at < NOW() - INTERVAL '12 hours'
+          OR last_scraped_at < NOW() - (${hours}::text || ' hours')::interval
         )
       ORDER BY last_scraped_at ASC NULLS FIRST
       LIMIT ${limit}

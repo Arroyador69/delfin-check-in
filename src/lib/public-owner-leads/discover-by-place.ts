@@ -20,7 +20,9 @@ const PORTAL_HOST =
   /casasruralesen|campingsde|barcelonacampings|alojamientorural|turismo-rural|escapada|booking|airbnb|kayak|rusticae|tripadvisor|fedcamping|campingred|misterplan|ruralgest|idealista|fotocasa|wordpress\.com|wix\.com|facebook|instagram|gob\.es|rediris|toprural|spain-holiday/i;
 
 const OVERPASS_ENDPOINTS = [
+  'https://overpass.osm.ch/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
   'https://overpass-api.de/api/interpreter',
   'https://overpass.openstreetmap.ru/api/interpreter',
 ];
@@ -46,16 +48,18 @@ export type PlaceDiscoveryResult = {
  * aborta si pedimos nwr + regex + radio grande.
  */
 function overpassQueriesAround(c: PlaceCoord): string[] {
-  const r = Math.min(c.radiusM ?? 10000, 10000);
-  const types = ['apartment', 'guest_house', 'chalet', 'hostel', 'hotel', 'camp_site'] as const;
-  return types.map(
-    (t) =>
-      `
-[out:json][timeout:8];
-node(around:${r},${c.lat},${c.lon})["tourism"="${t}"]["website"];
-out tags 20;
-`.trim()
-  );
+  const r = Math.min(c.radiusM ?? 12000, 18000);
+  // Una query nwr por zona (más cobertura; mirrors públicos a veces fallan).
+  return [
+    `
+[out:json][timeout:18];
+(
+  nwr(around:${r},${c.lat},${c.lon})["tourism"~"^(apartment|guest_house|chalet|hostel|hotel|camp_site|motel|alpine_hut)$"]["website"];
+  nwr(around:${r},${c.lat},${c.lon})["tourism"~"^(apartment|guest_house|chalet|hostel|hotel|camp_site)$"]["contact:website"];
+);
+out tags 35;
+`.trim(),
+  ];
 }
 
 async function fetchOverpass(query: string, timeoutMs = 12_000): Promise<unknown[]> {

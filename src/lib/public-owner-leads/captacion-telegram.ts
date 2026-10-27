@@ -187,6 +187,41 @@ export function progressMilestonesCrossed(
 }
 
 /**
+ * Alerta urgente: cola sin mails / refill no pudo reponer stock.
+ * Debe llegar siempre que la captación se quede sin combustible.
+ */
+export async function notifyQueueStarvation(opts: {
+  queuedAfter: number;
+  sentToday?: number;
+  target?: number;
+  detail?: string;
+}): Promise<{ ok: boolean }> {
+  try {
+    const target = opts.target ?? PUBLIC_OWNER_LEADS_DAILY_HARD_CAP;
+    const fecha = new Date().toLocaleString('es-ES', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+      timeZone: 'Europe/Madrid',
+    });
+    let msg = `🚨 <b>Captación · COLA SIN MAILS</b>\n`;
+    msg += `📅 ${fecha} (Madrid)\n\n`;
+    msg += `Cola lista ahora: <b>${opts.queuedAfter}</b> (objetivo ≥${target})\n`;
+    if (typeof opts.sentToday === 'number') {
+      msg += `Enviados hoy: <b>${opts.sentToday}</b> / ${PUBLIC_OWNER_LEADS_DAILY_HARD_CAP}\n`;
+    }
+    msg += `\nEl refill no ha podido encontrar webs/emails nuevos.\n`;
+    msg += `Hay que ampliar fuentes (datos abiertos / OSM / semillas) o revisar Overpass.\n`;
+    if (opts.detail) msg += `\nℹ️ ${opts.detail}\n`;
+    msg += `\n🔗 <a href="https://admin.delfincheckin.com/superadmin/public-owner-leads">Panel captación</a>`;
+    const ok = await sendTelegramMessage(msg);
+    return { ok };
+  } catch (e) {
+    console.error('[captacion-telegram-starvation]', e);
+    return { ok: false };
+  }
+}
+
+/**
  * Telegram solo si se cruzó un múltiplo de 150 (u `every`).
  * Una sola notificación con el hito más alto cruzado en esta oleada.
  */

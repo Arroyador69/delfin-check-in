@@ -73,13 +73,13 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
 
     const maxSend = opts?.maxSend ?? PUBLIC_OWNER_LEADS_WAVE_MAX;
     const progressKind = isProgressTelegramSlot(slot);
-    // En slots de Telegram: enviar oleada SIN refill → avisar → refill.
-    // Si el refill timeout, igual llega el progreso (el cron dedicado también cubre 12/16).
+    // Siempre enviar PRIMERO sin refill pesado (anti-timeout Vercel 300s).
+    // Refill ligero después. Prepare (07:00) hace refill completo a ≥1000.
     const outreach = await runDailyPublicOwnerLeads({
       dryRun,
       wave,
       maxSend,
-      skipRefill: Boolean(progressKind) && !dryRun,
+      skipRefill: !dryRun && wave !== 'prepare',
       extractLimit:
         opts?.extractLimit ??
         (wave === 'prepare' ? PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN : 0),
@@ -107,16 +107,18 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
       telegram = { skippedNotify: true, reason: 'no_telegram_slot' };
     }
 
-    // Refill diferido tras Telegram (slots progreso)
+    // Refill LIGERO post-envío (siempre, salvo dry-run / meta cumplida).
+    // Prepare hace el refill pesado a 1000; aquí reponemos ~300 listos.
     let refillDeferred: unknown = null;
-    if (!dryRun && progressKind && !outreach.skippedBecauseGoalMet) {
+    if (!dryRun && wave !== 'prepare' && !outreach.skippedBecauseGoalMet) {
       try {
         const { refillQueuedStock } = await import('./refill-queue');
-        const { PUBLIC_OWNER_LEADS_MIN_QUEUED } = await import('./constants');
         refillDeferred = await refillQueuedStock({
-          target: PUBLIC_OWNER_LEADS_MIN_QUEUED,
-          extractLimit: 28,
-          opendataLimit: 120,
+          target: 300,
+          extractLimit: 18,
+          opendataLimit: 80,
+          alertIfStarved: true,
+          starveBelow: 40,
         });
       } catch (e) {
         refillDeferred = {

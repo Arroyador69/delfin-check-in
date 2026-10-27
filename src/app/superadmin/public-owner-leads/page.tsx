@@ -51,6 +51,15 @@ type DayRow = {
   bounced?: number;
 };
 
+type IntakeRow = {
+  email: string;
+  domain: string | null;
+  source_url: string;
+  status: string;
+  notes: string | null;
+  created_at: string;
+};
+
 const SIGNUP_DAILY_GOAL = 20;
 
 function fmt(d: string | null | undefined): string {
@@ -93,6 +102,10 @@ export default function PublicOwnerLeadsAdminPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [dayFilter, setDayFilter] = useState<string>(''); // '' = todos · YYYY-MM-DD = ese día
   const [sourcesSummary, setSourcesSummary] = useState<Record<string, number>>({});
+  const [intakeBySource, setIntakeBySource] = useState<Array<{ source_kind: string; n: number }>>(
+    []
+  );
+  const [intakeRecent, setIntakeRecent] = useState<IntakeRow[]>([]);
   const [urlsText, setUrlsText] = useState('');
   const [bounceText, setBounceText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -145,6 +158,10 @@ export default function PublicOwnerLeadsAdminPage() {
       setByDay(Array.isArray(data.by_day) ? data.by_day : []);
       setLeads(data.leads || []);
       setSourcesSummary(data.sources?.[0]?.summary || {});
+      setIntakeBySource(
+        Array.isArray(data.intake?.by_source_today) ? data.intake.by_source_today : []
+      );
+      setIntakeRecent(Array.isArray(data.intake?.recent) ? data.intake.recent : []);
       setOutreachProvider(data.outreach_provider || null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -405,6 +422,55 @@ export default function PublicOwnerLeadsAdminPage() {
                 sub={`${stats.signup_rate_pct ?? 0}%`}
                 accent
               />
+            </section>
+
+            <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-slate-100">
+                <h2 className="font-semibold text-slate-900">Entradas web + email (estadísticas)</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Qué webs y correos han entrado · por fuente · últimos 7 días
+                </p>
+              </div>
+              <div className="px-5 py-3 flex flex-wrap gap-2">
+                {intakeBySource.length === 0 ? (
+                  <span className="text-xs text-slate-500">Sin altas de stock hoy aún</span>
+                ) : (
+                  intakeBySource.map((r) => (
+                    <span
+                      key={r.source_kind}
+                      className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-50 text-slate-700 ring-1 ring-slate-200"
+                    >
+                      {r.source_kind}: {r.n}
+                    </span>
+                  ))
+                )}
+              </div>
+              <div className="overflow-x-auto max-h-56 overflow-y-auto border-t border-slate-100">
+                <table className="min-w-full text-xs">
+                  <thead className="bg-slate-50 text-slate-500 sticky top-0">
+                    <tr>
+                      <th className="text-left px-4 py-2 font-semibold">Email</th>
+                      <th className="text-left px-4 py-2 font-semibold">Web / dominio</th>
+                      <th className="text-left px-4 py-2 font-semibold">Fuente</th>
+                      <th className="text-left px-4 py-2 font-semibold">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {intakeRecent.slice(0, 25).map((row) => (
+                      <tr key={`${row.email}-${row.created_at}`} className="border-t border-slate-50">
+                        <td className="px-4 py-1.5 font-mono text-slate-800">{row.email}</td>
+                        <td className="px-4 py-1.5 text-slate-600 truncate max-w-[220px]">
+                          {row.domain || row.source_url}
+                        </td>
+                        <td className="px-4 py-1.5 text-slate-500 truncate max-w-[160px]">
+                          {row.notes || '—'}
+                        </td>
+                        <td className="px-4 py-1.5">{row.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </section>
 
             <section className="rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
