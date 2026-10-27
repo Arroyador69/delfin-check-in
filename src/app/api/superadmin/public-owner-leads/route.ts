@@ -20,6 +20,7 @@ import {
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from '@/lib/public-owner-leads/constants';
 import { syncZohoBounces } from '@/lib/zoho-bounce-sync';
+import { getOutreachProviderInfo } from '@/lib/public-owner-leads/send-smtp';
 
 async function requireSuperAdmin(req: NextRequest) {
   const authToken = req.cookies.get('auth_token')?.value;
@@ -224,6 +225,7 @@ export async function GET(req: NextRequest) {
       waves_still_run: wavesStillRun,
       schedule_hint:
         '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram 12:00 + 16:00 + cierre 21:00',
+      outreach_provider: getOutreachProviderInfo(),
       stats: { ...st, open_rate_pct: openRate, click_rate_pct: clickRate, signup_rate_pct: signupRate },
       today: today.rows[0] || {},
       by_day: byDay.rows,

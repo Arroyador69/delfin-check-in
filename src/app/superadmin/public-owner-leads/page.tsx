@@ -97,6 +97,12 @@ export default function PublicOwnerLeadsAdminPage() {
   const [bounceText, setBounceText] = useState('');
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [outreachProvider, setOutreachProvider] = useState<{
+    provider?: string;
+    from?: string;
+    zohoRisk?: boolean;
+    hint?: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -139,6 +145,7 @@ export default function PublicOwnerLeadsAdminPage() {
       setByDay(Array.isArray(data.by_day) ? data.by_day : []);
       setLeads(data.leads || []);
       setSourcesSummary(data.sources?.[0]?.summary || {});
+      setOutreachProvider(data.outreach_provider || null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -233,6 +240,21 @@ export default function PublicOwnerLeadsAdminPage() {
               16:00 · cierre 21:00) · si altas ≥20 se para y la cola queda para mañana · cola siempre ≥
               {queueTarget}. Cola ahora: <strong className="text-slate-900">{reserveReady}</strong>.
             </p>
+            {outreachProvider && (
+              <p
+                className={`mt-3 text-sm rounded-lg px-3 py-2 max-w-2xl ring-1 ${
+                  outreachProvider.zohoRisk
+                    ? 'bg-amber-50 text-amber-950 ring-amber-200'
+                    : 'bg-emerald-50 text-emerald-950 ring-emerald-200'
+                }`}
+              >
+                <strong>Proveedor outreach:</strong>{' '}
+                {String(outreachProvider.provider || '—').toUpperCase()}
+                {outreachProvider.from ? ` · from ${outreachProvider.from}` : ''}
+                <br />
+                <span className="opacity-90">{outreachProvider.hint}</span>
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             <button
