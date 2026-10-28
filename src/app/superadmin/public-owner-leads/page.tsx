@@ -337,7 +337,48 @@ export default function PublicOwnerLeadsAdminPage() {
           <p className="text-slate-500 text-sm">Cargando métricas…</p>
         ) : (
           <>
-            <section className="grid md:grid-cols-2 gap-4">
+            <section className="grid md:grid-cols-3 gap-4">
+              <div
+                className={`rounded-2xl border p-5 shadow-sm ${
+                  reserveReady >= queueTarget
+                    ? 'border-indigo-200 bg-indigo-50/50'
+                    : 'border-amber-200 bg-amber-50/60'
+                }`}
+              >
+                <div className="flex justify-between items-baseline gap-2">
+                  <h2 className="text-sm font-semibold text-slate-800">Cola lista (stock)</h2>
+                  <span
+                    className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      reserveReady >= queueTarget
+                        ? 'bg-indigo-100 text-indigo-900'
+                        : 'bg-amber-100 text-amber-900'
+                    }`}
+                  >
+                    {reserveReady >= queueTarget ? 'OK para oleadas' : 'Por debajo del mínimo'}
+                  </span>
+                </div>
+                <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-indigo-950">
+                  {reserveReady}
+                  <span className="text-lg text-slate-400 font-medium"> / {queueTarget}</span>
+                </p>
+                <div className="mt-3 h-2.5 rounded-full bg-white/80 overflow-hidden ring-1 ring-indigo-100">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      reserveReady >= queueTarget ? 'bg-indigo-600' : 'bg-amber-500'
+                    }`}
+                    style={{
+                      width: `${Math.min(100, Math.round((reserveReady / Math.max(1, queueTarget)) * 100))}%`,
+                    }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-slate-600">
+                  Mails en cola listos para enviar (no se reinicia cada día). En cola ahora:{' '}
+                  <strong>{stats.queued ?? 0}</strong>
+                  {(stats.new_count ?? 0) > 0 ? ` · new ${stats.new_count}` : ''}. «Nuevos hoy» ≠
+                  stock: solo leads creados hoy ({today.discovered_today ?? 0}).
+                </p>
+              </div>
+
               <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
                 <div className="flex justify-between items-baseline gap-2">
                   <h2 className="text-sm font-semibold text-slate-800">Altas nuevas hoy (KPI)</h2>
@@ -370,8 +411,7 @@ export default function PublicOwnerLeadsAdminPage() {
                 <p className="mt-2 text-xs text-slate-500">
                   {wavesStillRun
                     ? `Aún <${SIGNUP_DAILY_GOAL} altas → cada ~30 min se envían hasta ${waveSize} (nunca repetidos).`
-                    : `Ya hay ${SIGNUP_DAILY_GOAL}+ altas → no más envíos hoy; cola guardada para mañana.`}{' '}
-                  Cola objetivo ≥{queueTarget}: {reserveReady} listos.
+                    : `Ya hay ${SIGNUP_DAILY_GOAL}+ altas → no más envíos hoy; cola guardada para mañana.`}
                 </p>
               </div>
 
@@ -393,7 +433,7 @@ export default function PublicOwnerLeadsAdminPage() {
                   <MiniStat label="Abiertos" value={today.opened_today} />
                   <MiniStat label="Clicks" value={today.clicked_today} />
                   <MiniStat label="Undelivered" value={today.bounced_today} />
-                  <MiniStat label="Descubiertos" value={today.discovered_today} />
+                  <MiniStat label="Nuevos hoy" value={today.discovered_today} />
                 </div>
                 <p className="mt-3 text-xs text-slate-500">
                   Zoho-safe: {waveSize}/oleada · delay {delaySec}s · Telegram solo 12:00 + 16:00 + cierre
@@ -411,7 +451,13 @@ export default function PublicOwnerLeadsAdminPage() {
               </p>
             </section>
 
-            <section className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <MetricCard
+                label="En cola"
+                value={stats.queued}
+                sub={`objetivo ≥${queueTarget}`}
+                accent
+              />
               <MetricCard label="Enviados total" value={stats.sent} />
               <MetricCard label="Undelivered" value={stats.bounced} sub="no volver a enviar" />
               <MetricCard label="Abiertos" value={stats.opened} sub={`${stats.open_rate_pct ?? 0}%`} />
@@ -420,7 +466,6 @@ export default function PublicOwnerLeadsAdminPage() {
                 label="Altas atribuidas"
                 value={stats.signed_up}
                 sub={`${stats.signup_rate_pct ?? 0}%`}
-                accent
               />
             </section>
 
