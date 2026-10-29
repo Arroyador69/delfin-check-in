@@ -59,12 +59,23 @@ export async function GET(req: NextRequest) {
       hasMir = false;
     }
 
+    let hasCompany = false;
+    try {
+      const empresa = await sql`
+        SELECT 1 FROM empresa_config WHERE tenant_id = ${tenantId} LIMIT 1
+      `;
+      hasCompany = empresa.rows.length > 0;
+    } catch {
+      hasCompany = false;
+    }
+
     if (onboardingStatus === 'completed') {
       const deferredPending: OnboardingProgressStep[] = [];
       if (deferredRaw.includes('company') && !hasCompany) {
         deferredPending.push({ id: 'company', done: false });
       }
-      if (deferredRaw.includes('units') && roomCount === 0) {
+      // Siempre pedir 1ª habitación si aún no hay (outreach lite a veces marcaba completed sin units)
+      if (roomCount === 0) {
         deferredPending.push({ id: 'units', done: false });
       }
       if (deferredRaw.includes('mir') && !hasMir) {
@@ -85,13 +96,9 @@ export async function GET(req: NextRequest) {
         deferred_setup: deferredPending.length > 0,
         room_count: roomCount,
         has_mir: hasMir,
+        has_company: hasCompany,
       });
     }
-
-    const empresa = await sql`
-      SELECT 1 FROM empresa_config WHERE tenant_id = ${tenantId} LIMIT 1
-    `;
-    const hasCompany = empresa.rows.length > 0;
 
     let roomCountInProgress = roomCount;
 

@@ -346,19 +346,19 @@ const TEMPLATES: Record<
 
   trial_d0_welcome: (p) => {
     const name = firstName(p.ownerName);
-    const subject = `${name}, configura el MIR en 15 minutos (prueba gratis)`;
+    const subject = `${name}, crea tu primera habitación (1 min, gratis)`;
     const body = contentBlock(`
       <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Bienvenido/a, ${esc(name)}</h1>
-      <p style="margin:0 0 12px 0;">Tu prueba gratis de <strong>Delfín Check-in</strong> ya está activa. Check-in aquí = <strong>MIR / parte de viajeros</strong>: el huésped rellena el formulario y tú cumples el registro oficial sin papeles.</p>
-      ${infoBox('<strong>En 15 minutos puedes:</strong><br/>✓ Crear tu alojamiento<br/>✓ Conectar credenciales MIR<br/>✓ Tener listo el enlace del formulario para el huésped', '#f0f9ff', '#0284c7')}
+      <p style="margin:0 0 12px 0;">Tu cuenta gratis de <strong>Delfín Check-in</strong> ya está activa. El primer paso útil es <strong>crear una habitación o unidad</strong>: sin eso no hay formulario de viajeros ni check-in MIR.</p>
+      ${infoBox('<strong>Orden recomendado (rápido):</strong><br/>1️⃣ Crear 1 habitación / unidad (~1 min)<br/>2️⃣ Conectar credenciales MIR (cuando quieras)<br/>3️⃣ Enviar el enlace del formulario al huésped', '#f0f9ff', '#0284c7')}
       ${infoBox('<strong>Qué es cada cosa</strong> (para no mezclar):<br/>· <strong>Check-in</strong> = MIR / parte de viajeros<br/>· <strong>Tap Wall</strong> = chip NFC WiFi (add-on opcional, otro día)<br/>· <strong>App</strong> = mando a distancia del panel', '#f8fafc', '#64748b')}
-      ${ctaButton(p.onboardingUrl, 'Configurar MIR en 15 min')}
+      ${ctaButton(p.onboardingUrl, 'Crear mi primera habitación')}
       <p style="margin:16px 0 0 0;font-size:13px;color:#64748b;">Si el botón no funciona, copia este enlace:<br/><span style="word-break:break-all;">${esc(p.onboardingUrl)}</span></p>
     `);
     return {
       subject,
       html: wrapEmail(body, p.unsubscribeUrl),
-      text: `Hola ${name},\n\nConfigura el MIR en 15 min: ${p.onboardingUrl}\n\nCheck-in = MIR · Tap Wall = NFC · App = mando a distancia\n\nBaja: ${p.unsubscribeUrl}`,
+      text: `Hola ${name},\n\nCrea tu primera habitación: ${p.onboardingUrl}\n\nCheck-in = MIR · Tap Wall = NFC · App = mando a distancia\n\nBaja: ${p.unsubscribeUrl}`,
     };
   },
 
@@ -366,20 +366,20 @@ const TEMPLATES: Record<
     const name = firstName(p.ownerName);
     const guestUrl = p.guestFormUrl || p.onboardingUrl;
     const thumb = getMirVideoThumbnailUrl();
-    const subject = `${name}, checklist MIR + enlace del formulario huésped`;
+    const subject = `${name}, ¿ya creaste tu habitación? Checklist día 1`;
     const body = contentBlock(`
-      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Checklist MIR (día 1)</h1>
-      <p style="margin:0 0 12px 0;">Hoy el objetivo es dejar el <strong>Check-in (MIR)</strong> usable para la próxima llegada:</p>
-      ${infoBox('☐ Credenciales MIR conectadas<br/>☐ Al menos una unidad / habitación<br/>☐ Enlace del formulario listo para mandar al huésped<br/>☐ (Opcional) vídeo de credenciales MIR si te atascas', '#f0fdf4', '#16a34a')}
-      ${videoBlock(MIR_CREDENTIALS_VIDEO_URL, thumb, 'Ver vídeo: credenciales MIR paso a paso')}
-      ${ctaButton(p.onboardingUrl, 'Seguir checklist MIR')}
+      <h1 style="margin:0 0 16px 0;font-size:22px;color:#0f172a;">Checklist día 1</h1>
+      <p style="margin:0 0 12px 0;">Sin <strong>al menos una habitación</strong> el Check-in MIR no sirve. Empieza por ahí:</p>
+      ${infoBox('☑ <strong>1ª habitación / unidad</strong> (imprescindible)<br/>☐ Credenciales MIR conectadas<br/>☐ Enlace del formulario listo para el huésped<br/>☐ (Opcional) vídeo MIR si te atascas', '#f0fdf4', '#16a34a')}
+      ${ctaButton(p.onboardingUrl, 'Crear / abrir mi habitación')}
+      ${videoBlock(MIR_CREDENTIALS_VIDEO_URL, thumb, 'Ver vídeo: credenciales MIR (después de la habitación)')}
       ${ctaButton(guestUrl, 'Ver / copiar enlace formulario huésped')}
       <p style="margin:12px 0 0 0;font-size:13px;color:#64748b;">El formulario es para el <strong>parte de viajeros</strong>. No es Tap Wall (NFC): eso es un add-on aparte.</p>
     `);
     return {
       subject,
       html: wrapEmail(body, p.unsubscribeUrl),
-      text: `Hola ${name},\n\nChecklist MIR: ${p.onboardingUrl}\nFormulario huésped: ${guestUrl}\nVídeo MIR: ${MIR_CREDENTIALS_VIDEO_URL}\n\nBaja: ${p.unsubscribeUrl}`,
+      text: `Hola ${name},\n\nCrea tu habitación: ${p.onboardingUrl}\nFormulario huésped: ${guestUrl}\nVídeo MIR: ${MIR_CREDENTIALS_VIDEO_URL}\n\nBaja: ${p.unsubscribeUrl}`,
     };
   },
 
