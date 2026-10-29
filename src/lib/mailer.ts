@@ -93,9 +93,9 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
   const base = {
     es: {
       subject: {
-        waitlist_launch: '🐬 Delfín Check-in: tu cuenta está lista — empieza gratis',
+        waitlist_launch: '🐬 Te falta 1 paso: crea tu primera habitación (gratis)',
         web_plan_paid: '🐬 Delfín Check-in: pago confirmado — termina tu configuración',
-        default: '🐬 Delfín Check-in: configura tu alojamiento en 6 pasos',
+        default: '🐬 Crea tu habitación y activa el check-in MIR',
       },
       heroTitle: {
         waitlist_launch: 'Bienvenido a Delfín Check-in',
@@ -103,7 +103,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
         default: 'Configuración guiada en 6 pasos',
       },
       heroSubtitle: {
-        waitlist_launch: 'Plan gratuito con 1 propiedad · panel web adaptado a móvil',
+        waitlist_launch: 'Plan gratuito · 1 habitación · sin tarjeta',
         web_plan_paid: 'Tu plan ya está activo · un último paso en el panel',
         default: 'Contraseña, datos, plan, MIR, propiedad y cobros — desde el móvil también',
       },
@@ -114,13 +114,13 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       },
       bodyLead: {
         waitlist_launch:
-          'Hemos activado tu acceso en <strong>admin.delfincheckin.com</strong>. Pulsa el botón y sigue el asistente: primero crearás tu <strong>contraseña</strong> y después completarás los datos de tu alojamiento. Puedes empezar con el <strong>plan gratuito (1 propiedad)</strong> o contratar un plan de pago cuando quieras.',
+          'Hemos activado tu acceso en <strong>admin.delfincheckin.com</strong>. El paso útil es <strong>crear tu primera habitación</strong> (1 min): sin eso no hay formulario de viajeros ni check-in MIR. Pulsa el botón — gratis, sin tarjeta.',
         web_plan_paid:
           'Gracias por contratar Delfín Check-in. Tu suscripción ya está activa (gestión segura en la web con Polar). Abre el enlace, define tu <strong>contraseña</strong> si aún no lo hiciste y termina el asistente: datos del negocio, unidades, MIR y cobros.',
         default:
-          'Tu cuenta ya está creada. El asistente del panel te guía en <strong>6 pasos</strong> (móvil u ordenador): contraseña, datos del alojamiento, plan, credenciales MIR, primera propiedad y cobros opcionales. Pulsa el botón para continuar:',
+          'Tu cuenta ya está creada. Empieza por <strong>crear 1 habitación</strong>; luego puedes completar MIR y el resto. Pulsa el botón para continuar:',
       },
-      cta: 'Comenzar onboarding',
+      cta: 'Crear mi primera habitación',
       importantTitle: 'Importante:',
       importantBody:
         'si no ves este correo en la bandeja de entrada, revisa <strong>Spam</strong> o <strong>Promociones</strong> y márcalo como correo deseado.',
@@ -806,6 +806,8 @@ export async function sendOnboardingEmail(params: {
   variant?: OnboardingEmailVariant;
   /** Idioma del email (si no se pasa, se infiere de la URL o cae a es). */
   locale?: string;
+  /** Asunto distinto (p.ej. reintento a no-abiertos). */
+  subjectOverride?: string;
 }) {
   let trackingId: string | null = null;
   try {
@@ -886,7 +888,8 @@ export async function sendOnboardingEmail(params: {
           </tr>`
         : '';
 
-    const subject = copy.subject;
+    const subject =
+      (params.subjectOverride && String(params.subjectOverride).trim()) || copy.subject;
 
     const text = copy.text(params.onboardingUrl, params.tempPassword);
 
