@@ -582,9 +582,9 @@
       "changePassword": "Guardar y continuar",
       "continueNext": "Continuar al siguiente paso",
       "outreachLiteTitle": "Tu cuenta ya está lista",
-      "outreachLiteBody": "Entras gratis, sin tarjeta. Puedes configurar alojamiento, MIR y habitaciones más tarde desde el panel (te lo recordamos en la campanita).",
-      "outreachLiteEnter": "Entrar al panel ahora",
-      "outreachLiteEntering": "Entrando…",
+      "outreachLiteBody": "Gratis, sin tarjeta. El siguiente paso es crear tu primera habitación o unidad — sin eso el check-in MIR no puede usarse.",
+      "outreachLiteEnter": "Crear mi primera habitación",
+      "outreachLiteEntering": "Abriendo…",
       "outreachLiteOrPassword": "O elige ahora una contraseña personal (opcional):"
     },
     "step2": {
@@ -670,6 +670,8 @@
       "tryFirstBody": "Puedes entrar al dashboard sin crear unidades ahora. Te recordaremos en la campanita cuando quieras configurar tu alojamiento.",
       "skipForNow": "Probar primero — configurar unidades más tarde",
       "skipHint": "También puedes crear unidades abajo si ya lo tienes claro. Los recordatorios aparecen en la campanita 🔔 del panel.",
+      "outreachMustCreateTitle": "Crea al menos una habitación o unidad",
+      "outreachMustCreateBody": "Sin una unidad no hay formulario de viajeros ni check-in MIR usable. Tarda menos de un minuto: pon un nombre (ej. Habitación 1) y pulsa Añadir.",
       "maxGuestsLabel": "Máximo de viajeros (formulario MIR)",
       "maxGuestsHint": "Cuántas personas pueden registrarse en un mismo envío del formulario de viajeros (máx. 50, normativa MIR)."
     },

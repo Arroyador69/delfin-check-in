@@ -132,7 +132,7 @@ export default function OnboardingPage() {
     codigoEstablecimiento: '',
     propertyName: '',
     propertyAdded: false,
-    selectedPlanId: 'checkin',
+    selectedPlanId: 'free',
     billingInterval: 'month',
     unitCount: 1,
     checkoutCompleted: false,
@@ -861,13 +861,36 @@ export default function OnboardingPage() {
     }
   };
 
-  /** Outreach 1-clic: cuenta + sesión OK → panel con tareas aplazadas (sin depender del email de contraseña). */
+  /**
+   * Outreach 1-clic: saltar wizard largo → ir directo a crear la 1ª habitación (FREE).
+   * Antes marcaba completed sin unidades y casi nadie terminaba de crear habitaciones.
+   */
   const handleOutreachLiteEnterDashboard = async () => {
-    setFormData((prev) => ({ ...prev, passwordChanged: true }));
-    await handleCompleteOnboarding({
-      skipUnits: true,
-      deferredTasks: ['company', 'units', 'mir', 'stripe'],
-    });
+    setError('');
+    setLoading(true);
+    setFormData((prev) => ({
+      ...prev,
+      passwordChanged: true,
+      selectedPlanId: 'free',
+      unitCount: 1,
+      checkoutCompleted: true,
+    }));
+    try {
+      await fetch('/api/tenant/onboarding-status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          onboarding_status: 'in_progress',
+          deferred_tasks: ['company', 'mir', 'stripe'],
+        }),
+      });
+      setCurrentStep(5);
+    } catch {
+      setError(t('errors.generic'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleFinishStep5 = async () => {
@@ -1544,7 +1567,7 @@ export default function OnboardingPage() {
           {t('step4.intro')}
         </p>
 
-        {!formData.propertyAdded && (
+        {!formData.propertyAdded && !outreachLite && (
           <div className="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/80 p-5 mb-6">
             <p className="text-sm font-medium text-blue-950 mb-1">{t('step4.tryFirstTitle')}</p>
             <p className="text-sm text-blue-900/90 mb-4 leading-relaxed">{t('step4.tryFirstBody')}</p>
@@ -1556,6 +1579,16 @@ export default function OnboardingPage() {
             >
               {t('step4.skipForNow')}
             </button>
+          </div>
+        )}
+        {!formData.propertyAdded && outreachLite && (
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 p-5 mb-6">
+            <p className="text-sm font-medium text-indigo-950 mb-1">
+              {t('step4.outreachMustCreateTitle')}
+            </p>
+            <p className="text-sm text-indigo-900/90 leading-relaxed">
+              {t('step4.outreachMustCreateBody')}
+            </p>
           </div>
         )}
 
@@ -1976,7 +2009,8 @@ export default function OnboardingPage() {
                     setFormData((prev) => ({
                       ...prev,
                       selectedPlanId: p.id,
-                      unitCount: p.id === 'free' ? Math.max(prev.unitCount || 1, 1) : Math.max(prev.unitCount || 1, p.defaultUnits),
+                      // Free = exactamente 1 unidad (evitar muro Polar por unitCount>1 tras flip desde Check-in)
+                      unitCount: p.id === 'free' ? 1 : Math.max(prev.unitCount || 1, p.defaultUnits),
                       checkoutCompleted: p.id === 'free' ? true : false,
                     }));
                     loadPricing({ selectedPlanId: p.id });

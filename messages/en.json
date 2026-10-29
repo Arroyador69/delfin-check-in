@@ -581,9 +581,9 @@
       "changePassword": "Save and continue",
       "continueNext": "Continue to next step",
       "outreachLiteTitle": "Your account is ready",
-      "outreachLiteBody": "You are in for free, no card required. You can set up property details, MIR and rooms later from the dashboard (we will remind you in the bell).",
-      "outreachLiteEnter": "Enter the dashboard now",
-      "outreachLiteEntering": "Entering…",
+      "outreachLiteBody": "Free, no card. Next: create your first room or unit — without it MIR check-in cannot be used.",
+      "outreachLiteEnter": "Create my first room",
+      "outreachLiteEntering": "Opening…",
       "outreachLiteOrPassword": "Or set a personal password now (optional):"
     },
     "step2": {
@@ -669,6 +669,8 @@
       "tryFirstBody": "You can enter the dashboard without creating units now. We will remind you in the notification bell when you are ready.",
       "skipForNow": "Try first — set up units later",
       "skipHint": "You can also create units below if you are ready. Reminders appear in the panel bell icon 🔔.",
+      "outreachMustCreateTitle": "Create at least one room or unit",
+      "outreachMustCreateBody": "Without a unit there is no guest form or usable MIR check-in. It takes under a minute: enter a name (e.g. Room 1) and tap Add.",
       "maxGuestsLabel": "Maximum travelers (MIR form)",
       "maxGuestsHint": "How many people can register in one traveler form submission (max. 50, MIR rules)."
     },

@@ -63,18 +63,20 @@ describe('plantillas owner_trial_mir', () => {
     onboardingStatus: 'in_progress' as const,
   };
 
-  it('D0 habla de MIR en 15 min y distingue productos', () => {
+  it('D0 prioriza 1ª habitación y distingue productos', () => {
     const mail = renderLifecycleTemplate('trial_d0_welcome', base);
-    expect(mail.subject.toLowerCase()).toContain('mir');
-    expect(mail.html).toContain('Configurar MIR en 15 min');
+    expect(mail.subject.toLowerCase()).toContain('habitación');
+    expect(mail.html).toContain('Crear mi primera habitación');
     expect(mail.html).toContain('Check-in');
     expect(mail.html).toContain('Tap Wall');
+    expect(mail.html).toMatch(/MIR/i);
     expect(mail.html).toContain('utm_campaign=trial_mir');
   });
 
-  it('D1 incluye checklist y formulario huésped', () => {
+  it('D1 incluye checklist habitación y formulario huésped', () => {
     const mail = renderLifecycleTemplate('trial_d1_checklist', base);
-    expect(mail.html).toContain('Checklist MIR');
+    expect(mail.html).toContain('Checklist día 1');
+    expect(mail.html).toContain('1ª habitación');
     expect(mail.html).toContain('formulario huésped');
     expect(mail.text).toContain(base.guestFormUrl);
   });
