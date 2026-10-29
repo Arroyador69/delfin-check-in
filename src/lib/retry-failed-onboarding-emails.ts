@@ -1,5 +1,7 @@
 /**
- * Reintenta emails de onboarding con status=failed (p.ej. rate-limit Zoho).
+ * Reintenta emails de onboarding:
+ * - status failed/pending (rate-limit Zoho, etc.)
+ * - status sent sin abrir + onboarding incompleto (≥24h) → nuevo asunto (best practice SaaS)
  * No reenvía si el tenant ya completó onboarding o hay bounce real.
  */
 
@@ -13,6 +15,85 @@ import {
 } from '@/lib/onboarding-magic-link';
 import { liftFalseSmtpBounceSuppression } from '@/lib/email-suppression';
 
+type TrackRow = {
+  id: string;
+  recipient_email: string;
+  tenant_id: string;
+  status: string;
+  kind: 'failed' | 'unopened';
+};
+
+async function sendOneOnboardingRetry(opts: {
+  email: string;
+  tenantIdHint?: string;
+  dryRun: boolean;
+  subjectOverride?: string;
+  trackingId?: string;
+}): Promise<'sent' | 'skipped' | 'dry' | { error: string }> {
+  const email = opts.email;
+  const owner = await findOnboardingOwnerByEmail(email);
+  if (!owner?.user_id) return 'skipped';
+  if (String(owner.onboarding_status || '').toLowerCase() === 'completed') {
+    // Completado sin habitaciones: igual conviene nudge, pero no vía este path de "pending"
+    return 'skipped';
+  }
+
+  await liftFalseSmtpBounceSuppression(email);
+
+  if (opts.dryRun) return 'dry';
+
+  const { token, tempPassword } = await issueFreshOnboardingCredentials(owner.user_id);
+  let outreachLite = false;
+  try {
+    const notesR = await sql`
+      SELECT notes FROM tenants WHERE id = ${owner.tenant_id}::uuid LIMIT 1
+    `;
+    const notes = String(notesR.rows[0]?.notes || '');
+    outreachLite = /outreach|one.?click|owner_outreach/i.test(notes);
+  } catch {
+    /* ignore */
+  }
+  // Forzar path lite (crear habitación) también si la alta fue 1-clic por email tracking
+  if (!outreachLite && opts.tenantIdHint) {
+    outreachLite = true;
+  }
+  const onboardingUrl = buildOnboardingUrl(
+    token,
+    'es',
+    outreachLite ? { src: 'outreach' } : undefined
+  );
+  const mail = await sendOnboardingEmail({
+    to: email,
+    onboardingUrl,
+    tempPassword,
+    tenantId: owner.tenant_id,
+    variant: onboardingEmailVariantForOwner(owner.plan_type),
+    locale: 'es',
+    subjectOverride: opts.subjectOverride,
+  });
+
+  if (mail?.success) {
+    if (opts.trackingId) {
+      try {
+        await sql`
+          UPDATE email_tracking
+          SET
+            metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+              superseded_by_retry: true,
+              retry_kind: opts.subjectOverride ? 'unopened_nudge' : 'failed_retry',
+            })}::jsonb,
+            updated_at = NOW()
+          WHERE id = ${opts.trackingId}::uuid
+        `;
+      } catch {
+        /* ignore */
+      }
+    }
+    return 'sent';
+  }
+  return { error: String(mail?.error || 'no_success') };
+}
+
 export async function retryFailedOnboardingEmails(opts?: {
   dryRun?: boolean;
   max?: number;
@@ -23,6 +104,7 @@ export async function retryFailedOnboardingEmails(opts?: {
   retried: number;
   sent: number;
   skipped: number;
+  unopenedNudged: number;
   errors: string[];
 }> {
   const dryRun = Boolean(opts?.dryRun);
@@ -32,15 +114,24 @@ export async function retryFailedOnboardingEmails(opts?: {
   let retried = 0;
   let sent = 0;
   let skipped = 0;
+  let unopenedNudged = 0;
 
   const meta = await sql`SELECT to_regclass('public.email_tracking') AS reg`;
   if (!meta.rows[0]?.reg) {
-    return { scanned: 0, retried: 0, sent: 0, skipped: 0, errors: ['email_tracking ausente'] };
+    return {
+      scanned: 0,
+      retried: 0,
+      sent: 0,
+      skipped: 0,
+      unopenedNudged: 0,
+      errors: ['email_tracking ausente'],
+    };
   }
 
   const emailFilter = opts?.email?.trim().toLowerCase() || null;
+  const rows: TrackRow[] = [];
 
-  // Incluye failed + pending (rate-limit Zoho no debe quedar como “fallido” duro).
+  // 1) Fallidos / pending SMTP
   const failed = emailFilter
     ? await sql`
         SELECT DISTINCT ON (LOWER(TRIM(recipient_email)))
@@ -67,12 +158,84 @@ export async function retryFailedOnboardingEmails(opts?: {
           AND email_type = 'onboarding'
           AND created_at >= NOW() - INTERVAL '7 days'
         ORDER BY LOWER(TRIM(recipient_email)), created_at DESC
-        LIMIT ${max}
+        LIMIT ${Math.ceil(max / 2)}
       `;
 
-  scanned = failed.rows.length;
+  for (const r of failed.rows) {
+    rows.push({
+      id: String(r.id),
+      recipient_email: String(r.recipient_email || ''),
+      tenant_id: String(r.tenant_id || ''),
+      status: String(r.status || ''),
+      kind: 'failed',
+    });
+  }
 
-  for (const row of failed.rows) {
+  // 2) Enviados sin abrir + tenant onboarding incompleto (24h–7d)
+  // Best practice: mismo cuerpo, asunto nuevo → recupera ~15-20% opens
+  if (!emailFilter || rows.length < max) {
+    const remain = Math.max(1, max - rows.length);
+    const unopened = emailFilter
+      ? await sql`
+          SELECT DISTINCT ON (LOWER(TRIM(et.recipient_email)))
+            et.id::text AS id,
+            et.recipient_email,
+            et.tenant_id::text AS tenant_id,
+            et.status
+          FROM email_tracking et
+          JOIN tenants t ON t.id = et.tenant_id
+          WHERE et.email_type = 'onboarding'
+            AND et.status = 'sent'
+            AND et.opened_at IS NULL
+            AND COALESCE(et.opened_count, 0) = 0
+            AND et.clicked_at IS NULL
+            AND et.created_at <= NOW() - INTERVAL '24 hours'
+            AND et.created_at >= NOW() - INTERVAL '7 days'
+            AND COALESCE(t.onboarding_status, 'pending') IN ('pending', 'in_progress')
+            AND LOWER(TRIM(et.recipient_email)) = ${emailFilter}
+            AND COALESCE(et.metadata->>'superseded_by_retry', 'false') <> 'true'
+          ORDER BY LOWER(TRIM(et.recipient_email)), et.created_at DESC
+          LIMIT ${remain}
+        `
+      : await sql`
+          SELECT DISTINCT ON (LOWER(TRIM(et.recipient_email)))
+            et.id::text AS id,
+            et.recipient_email,
+            et.tenant_id::text AS tenant_id,
+            et.status
+          FROM email_tracking et
+          JOIN tenants t ON t.id = et.tenant_id
+          WHERE et.email_type = 'onboarding'
+            AND et.status = 'sent'
+            AND et.opened_at IS NULL
+            AND COALESCE(et.opened_count, 0) = 0
+            AND et.clicked_at IS NULL
+            AND et.created_at <= NOW() - INTERVAL '24 hours'
+            AND et.created_at >= NOW() - INTERVAL '7 days'
+            AND COALESCE(t.onboarding_status, 'pending') IN ('pending', 'in_progress')
+            AND COALESCE(et.metadata->>'superseded_by_retry', 'false') <> 'true'
+          ORDER BY LOWER(TRIM(et.recipient_email)), et.created_at DESC
+          LIMIT ${remain}
+        `;
+
+    const seen = new Set(rows.map((r) => r.recipient_email.toLowerCase()));
+    for (const r of unopened.rows) {
+      const em = String(r.recipient_email || '').toLowerCase();
+      if (!em || seen.has(em)) continue;
+      seen.add(em);
+      rows.push({
+        id: String(r.id),
+        recipient_email: String(r.recipient_email || ''),
+        tenant_id: String(r.tenant_id || ''),
+        status: String(r.status || ''),
+        kind: 'unopened',
+      });
+    }
+  }
+
+  scanned = rows.length;
+
+  for (const row of rows) {
     const email = String(row.recipient_email || '')
       .trim()
       .toLowerCase();
@@ -82,75 +245,35 @@ export async function retryFailedOnboardingEmails(opts?: {
     }
 
     try {
-      const owner = await findOnboardingOwnerByEmail(email);
-      if (!owner?.user_id) {
-        skipped++;
-        continue;
-      }
-      if (String(owner.onboarding_status || '').toLowerCase() === 'completed') {
-        skipped++;
-        continue;
-      }
+      const subjectOverride =
+        row.kind === 'unopened'
+          ? '⏳ Tu habitación en Delfín sigue sin crear (1 min)'
+          : undefined;
 
-      await liftFalseSmtpBounceSuppression(email);
-
-      if (dryRun) {
-        retried++;
-        continue;
-      }
-
-      const { token, tempPassword } = await issueFreshOnboardingCredentials(owner.user_id);
-      // Lite si viene de outreach / 1-clic (notas tenant o waitlist)
-      let outreachLite = false;
-      try {
-        const notesR = await sql`
-          SELECT notes FROM tenants WHERE id = ${owner.tenant_id}::uuid LIMIT 1
-        `;
-        const notes = String(notesR.rows[0]?.notes || '');
-        outreachLite = /outreach|one.?click|owner_outreach/i.test(notes);
-      } catch {
-        /* ignore */
-      }
-      const onboardingUrl = buildOnboardingUrl(
-        token,
-        'es',
-        outreachLite ? { src: 'outreach' } : undefined
-      );
-      const mail = await sendOnboardingEmail({
-        to: email,
-        onboardingUrl,
-        tempPassword,
-        tenantId: owner.tenant_id,
-        variant: onboardingEmailVariantForOwner(owner.plan_type),
-        locale: 'es',
+      const result = await sendOneOnboardingRetry({
+        email,
+        tenantIdHint: row.tenant_id,
+        dryRun,
+        subjectOverride,
+        trackingId: row.id,
       });
 
+      if (result === 'skipped') {
+        skipped++;
+        continue;
+      }
       retried++;
-      if (mail?.success) {
+      if (result === 'dry') continue;
+      if (result === 'sent') {
         sent++;
-        // Marcar el tracking fallido/pending anterior como superseded (best-effort)
-        try {
-          await sql`
-            UPDATE email_tracking
-            SET
-              metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
-                superseded_by_retry: true,
-              })}::jsonb,
-              updated_at = NOW()
-            WHERE id = ${row.id}::uuid AND status IN ('failed', 'pending')
-          `;
-        } catch {
-          /* ignore */
-        }
-      } else {
-        errors.push(`${email}:${mail?.error || 'no_success'}`);
-        // Si Zoho sigue a rate-limit, no martillar el resto del lote
-        if (/Unusual sending|5\.4\.6|try after sometime|rate.?limit/i.test(String(mail?.error || ''))) {
+        if (row.kind === 'unopened') unopenedNudged++;
+      } else if (typeof result === 'object' && result.error) {
+        errors.push(`${email}:${result.error}`);
+        if (/Unusual sending|5\.4\.6|try after sometime|rate.?limit/i.test(result.error)) {
           errors.push('abort:zoho-rate-limit');
           break;
         }
       }
-      // Pausa corta entre reenvíos (mismo buzón SMTP que outreach)
       await new Promise((r) => setTimeout(r, 1800));
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -162,5 +285,5 @@ export async function retryFailedOnboardingEmails(opts?: {
     }
   }
 
-  return { scanned, retried, sent, skipped, errors };
+  return { scanned, retried, sent, skipped, unopenedNudged, errors };
 }
