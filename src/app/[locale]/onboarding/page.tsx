@@ -88,7 +88,9 @@ export default function OnboardingPage() {
   const BTN_NAV_ACTIONS = 'flex flex-col sm:flex-row gap-3 w-full sm:w-auto';
   const fromMobileApp = searchParams?.get('source') === 'mobile_app';
   /** Cold outreach 1-clic: onboarding lite 2 pantallas (unidad → valor). */
-  const outreachLite = searchParams?.get('src') === 'outreach';
+  const outreachFromUrl = searchParams?.get('src') === 'outreach';
+  const [outreachSticky, setOutreachSticky] = useState(false);
+  const outreachLite = outreachFromUrl || outreachSticky;
   const getStepLabel = (step: number) =>
     t(`progress.stepLabels.${step}` as 'progress.stepLabels.1');
   const [litePhase, setLitePhase] = useState<1 | 2>(1);
@@ -96,6 +98,19 @@ export default function OnboardingPage() {
   const [guestFormUrl, setGuestFormUrl] = useState('');
   const [copiedForm, setCopiedForm] = useState(false);
   const liteBootRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      if (outreachFromUrl) {
+        sessionStorage.setItem('onboarding_src_outreach', '1');
+        setOutreachSticky(true);
+      } else if (sessionStorage.getItem('onboarding_src_outreach') === '1') {
+        setOutreachSticky(true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [outreachFromUrl]);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -315,6 +330,8 @@ export default function OnboardingPage() {
   const bootstrapSessionFromToken = async () => {
     const token = searchParams?.get('token');
     const emailFromUrl = searchParams?.get('email')?.trim().toLowerCase();
+    const keepOutreach =
+      searchParams?.get('src') === 'outreach' || outreachLite || outreachSticky;
 
     if (!token) {
       await checkOnboardingStatus();
@@ -337,11 +354,22 @@ export default function OnboardingPage() {
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
+      const loc = getLocaleFromPath();
+      const onboardingPath = keepOutreach
+        ? `/${loc}/onboarding?src=outreach`
+        : `/${loc}/onboarding`;
       if (!res.ok || !data?.success) {
         const meRes = await fetch('/api/auth/me', { credentials: 'include' });
         if (meRes.ok) {
-          const loc = getLocaleFromPath();
-          router.replace(`/${loc}/onboarding`);
+          if (keepOutreach) {
+            try {
+              sessionStorage.setItem('onboarding_src_outreach', '1');
+            } catch {
+              /* ignore */
+            }
+            setOutreachSticky(true);
+          }
+          router.replace(onboardingPath);
           await checkOnboardingStatus();
           return;
         }
@@ -350,8 +378,15 @@ export default function OnboardingPage() {
         return;
       }
 
-      const loc = getLocaleFromPath();
-      router.replace(`/${loc}/onboarding`);
+      if (keepOutreach) {
+        try {
+          sessionStorage.setItem('onboarding_src_outreach', '1');
+        } catch {
+          /* ignore */
+        }
+        setOutreachSticky(true);
+      }
+      router.replace(onboardingPath);
       await checkOnboardingStatus();
     } catch {
       setError(t('errors.magicLinkValidateFailed'));
@@ -1825,6 +1860,7 @@ export default function OnboardingPage() {
       });
       try {
         localStorage.removeItem('onboarding_progress_v1');
+        sessionStorage.removeItem('onboarding_src_outreach');
       } catch {
         /* ignore */
       }
