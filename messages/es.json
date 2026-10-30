@@ -589,6 +589,8 @@
     },
     "lite": {
       "progress": "Paso {phase} de 2",
+      "booting": "Preparando tu acceso… (2 pasos)",
+      "bootHint": "Solo verás 2 pantallas: crear tu unidad y el enlace del huésped. El resto queda en la campanita.",
       "step1Title": "Ahorra tiempo en cada llegada",
       "step1Body": "Check-in en el móvil del huésped. Elige el tipo de alojamiento y crea tu primera unidad (1 minuto).",
       "typeLabel": "Tipo de alojamiento",

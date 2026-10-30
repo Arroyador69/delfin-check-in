@@ -588,6 +588,8 @@
     },
     "lite": {
       "progress": "Step {phase} of 2",
+      "booting": "Preparing your access… (2 steps)",
+      "bootHint": "You will only see 2 screens: create your unit and the guest link. The rest stays in the bell.",
       "step1Title": "Save time on every arrival",
       "step1Body": "Check-in on the guest's phone. Choose lodging type and create your first unit (1 minute).",
       "typeLabel": "Lodging type",

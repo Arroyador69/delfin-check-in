@@ -88,7 +88,9 @@ export default function OnboardingPage() {
   const BTN_NAV_ACTIONS = 'flex flex-col sm:flex-row gap-3 w-full sm:w-auto';
   const fromMobileApp = searchParams?.get('source') === 'mobile_app';
   /** Cold outreach 1-clic: onboarding lite 2 pantallas (unidad → valor). */
-  const outreachLite = searchParams?.get('src') === 'outreach';
+  const outreachFromUrl = searchParams?.get('src') === 'outreach';
+  const [outreachSticky, setOutreachSticky] = useState(false);
+  const outreachLite = outreachFromUrl || outreachSticky;
   const getStepLabel = (step: number) =>
     t(`progress.stepLabels.${step}` as 'progress.stepLabels.1');
   const [litePhase, setLitePhase] = useState<1 | 2>(1);
@@ -96,6 +98,19 @@ export default function OnboardingPage() {
   const [guestFormUrl, setGuestFormUrl] = useState('');
   const [copiedForm, setCopiedForm] = useState(false);
   const liteBootRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      if (outreachFromUrl) {
+        sessionStorage.setItem('onboarding_src_outreach', '1');
+        setOutreachSticky(true);
+      } else if (sessionStorage.getItem('onboarding_src_outreach') === '1') {
+        setOutreachSticky(true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [outreachFromUrl]);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -315,6 +330,8 @@ export default function OnboardingPage() {
   const bootstrapSessionFromToken = async () => {
     const token = searchParams?.get('token');
     const emailFromUrl = searchParams?.get('email')?.trim().toLowerCase();
+    const keepOutreach =
+      searchParams?.get('src') === 'outreach' || outreachLite || outreachSticky;
 
     if (!token) {
       await checkOnboardingStatus();
@@ -337,11 +354,22 @@ export default function OnboardingPage() {
         body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({}));
+      const loc = getLocaleFromPath();
+      const onboardingPath = keepOutreach
+        ? `/${loc}/onboarding?src=outreach`
+        : `/${loc}/onboarding`;
       if (!res.ok || !data?.success) {
         const meRes = await fetch('/api/auth/me', { credentials: 'include' });
         if (meRes.ok) {
-          const loc = getLocaleFromPath();
-          router.replace(`/${loc}/onboarding`);
+          if (keepOutreach) {
+            try {
+              sessionStorage.setItem('onboarding_src_outreach', '1');
+            } catch {
+              /* ignore */
+            }
+            setOutreachSticky(true);
+          }
+          router.replace(onboardingPath);
           await checkOnboardingStatus();
           return;
         }
@@ -350,8 +378,15 @@ export default function OnboardingPage() {
         return;
       }
 
-      const loc = getLocaleFromPath();
-      router.replace(`/${loc}/onboarding`);
+      if (keepOutreach) {
+        try {
+          sessionStorage.setItem('onboarding_src_outreach', '1');
+        } catch {
+          /* ignore */
+        }
+        setOutreachSticky(true);
+      }
+      router.replace(onboardingPath);
       await checkOnboardingStatus();
     } catch {
       setError(t('errors.magicLinkValidateFailed'));
@@ -1825,6 +1860,7 @@ export default function OnboardingPage() {
       });
       try {
         localStorage.removeItem('onboarding_progress_v1');
+        sessionStorage.removeItem('onboarding_src_outreach');
       } catch {
         /* ignore */
       }
@@ -1847,8 +1883,37 @@ export default function OnboardingPage() {
     }
   };
 
-  /** Flujo outreach: solo 2 pantallas. */
-  if (outreachLite && liteReady) {
+  /** Flujo outreach: NUNCA mostrar el wizard de 6 pasos. */
+  if (outreachLite) {
+    if (!liteReady) {
+      return (
+        <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex items-center justify-center px-4">
+          <div className="max-w-sm w-full rounded-2xl border border-sky-100 bg-white p-6 text-center shadow-sm">
+            <p className="text-3xl mb-3">🐬</p>
+            <p className="font-bold text-slate-900 text-lg">{t('appName')}</p>
+            <p className="mt-2 text-sm text-sky-800 font-medium">
+              {bootstrappingSession || loading
+                ? t('lite.booting')
+                : t('lite.progress', { phase: 1 })}
+            </p>
+            <p className="mt-3 text-xs text-slate-500">{t('lite.bootHint')}</p>
+            {error && (
+              <p className="mt-4 text-sm text-rose-700 whitespace-pre-wrap">{error}</p>
+            )}
+            {magicLinkFailed && (
+              <button
+                type="button"
+                className={`mt-4 w-full ${BTN_PRIMARY}`}
+                onClick={() => void handleOutreachLiteEnterDashboard()}
+              >
+                {t('lite.createCta')}
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     const isHotel = formData.lodgingType === 'hostal';
     return (
       <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white pb-[env(safe-area-inset-bottom)]">
