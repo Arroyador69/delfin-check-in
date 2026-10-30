@@ -721,7 +721,22 @@ export async function middleware(req: NextRequest) {
         (localeFromPath ? pathname === `/${localeFromPath}/onboarding` : false) ||
         (localeFromPath ? pathname.startsWith(`/${localeFromPath}/onboarding/`) : false);
 
-      if ((onboardingStatus === 'pending' || onboardingStatus === 'in_progress') && !isOnboardingPath) {
+      // Pago / upgrade durante onboarding lite: no reenviar al wizard (evita bucle).
+      const isOnboardingPaymentPath =
+        pathname === '/upgrade-plan' ||
+        pathname === '/settings/billing' ||
+        (localeFromPath
+          ? pathname === `/${localeFromPath}/upgrade-plan` ||
+            pathname.startsWith(`/${localeFromPath}/upgrade-plan/`) ||
+            pathname === `/${localeFromPath}/settings/billing` ||
+            pathname.startsWith(`/${localeFromPath}/settings/billing/`)
+          : false);
+
+      if (
+        (onboardingStatus === 'pending' || onboardingStatus === 'in_progress') &&
+        !isOnboardingPath &&
+        !isOnboardingPaymentPath
+      ) {
         const targetLocale = localeFromPath || defaultLocale;
         const onboardingUrl = new URL(`/${targetLocale}/onboarding`, req.url);
         // Cold outreach: no perder el lite de 2 pasos al forzar el gate de onboarding.

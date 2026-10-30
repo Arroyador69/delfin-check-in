@@ -610,10 +610,11 @@
       "plansTitle": "What's included",
       "plansFree": "Free: form, dashboard, cleaning and manual SES Hospedajes submit + Delfín extras.",
       "plansCheckin": "Check-in plan (~€2/mo + €2/property): automatic submit to SES Hospedajes.",
-      "upgradeCheckin": "Activate Check-in plan (automatic submit)",
-      "goDashboard": "Enter dashboard (finish later)",
+      "upgradeCheckin": "Turn on automatic submit · from ~€2/mo",
+      "openingCheckout": "Opening secure checkout…",
+      "goDashboard": "Enter free dashboard (finish later)",
       "entering": "Entering…",
-      "bellNote": "Company details, SES Hospedajes and payouts stay in the panel bell 🔔."
+      "bellNote": "Pay now or later. Company, SES Hospedajes and payouts stay in the bell 🔔."
     },
     "step2": {
       "title": "📋 Accommodation details",
