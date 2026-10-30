@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     }
 
     const goalOk = stats.signedUp >= PUBLIC_OWNER_SIGNUPS_DAILY_GOAL;
-    message += `\n\n🏁 <b>Cierre:</b> meta 20 altas <b>${goalOk ? 'CUMPLIDA' : 'NO cumplida'}</b>`;
+    message += `\n\n🏁 <b>Cierre:</b> meta 20 onboardings (KPI legacy altas) <b>${goalOk ? 'CUMPLIDA' : 'NO cumplida'}</b>`;
 
     const sent = await sendTelegramMessage(message);
     if (!sent) throw new Error('Failed to send Telegram message');

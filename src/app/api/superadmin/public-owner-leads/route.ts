@@ -17,6 +17,7 @@ import {
   PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_LEADS_WAVES_PER_DAY,
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
+  PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from '@/lib/public-owner-leads/constants';
 import { syncZohoBounces } from '@/lib/zoho-bounce-sync';
@@ -238,7 +239,20 @@ export async function GET(req: NextRequest) {
 
     const reserve = Number(st.new_count || 0) + Number(st.queued || 0);
     const signedToday = Number((today.rows[0] as { signed_up_today?: number })?.signed_up_today || 0);
-    const wavesStillRun = signedToday < PUBLIC_OWNER_SIGNUPS_DAILY_GOAL;
+    let onboardingsToday = 0;
+    try {
+      const ob = await sql`
+        SELECT COUNT(*)::int AS n
+        FROM tenants
+        WHERE onboarding_status = 'completed'
+          AND updated_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+            AT TIME ZONE 'Europe/Madrid'
+      `;
+      onboardingsToday = Number(ob.rows[0]?.n || 0);
+    } catch {
+      onboardingsToday = 0;
+    }
+    const wavesStillRun = onboardingsToday < PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL;
 
     return NextResponse.json({
       ok: true,
@@ -252,6 +266,8 @@ export async function GET(req: NextRequest) {
       progress_every: PUBLIC_OWNER_LEADS_PROGRESS_EVERY,
       delay_ms: PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
       signup_goal: PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
+      onboarding_goal: PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
+      onboardings_today: onboardingsToday,
       reserve_ready: reserve,
       afternoon_will_run: wavesStillRun,
       waves_still_run: wavesStillRun,

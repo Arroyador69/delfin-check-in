@@ -103,35 +103,35 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
   const videoThumb =
     process.env.OUTREACH_INTRO_VIDEO_THUMB?.trim() || OUTREACH_INTRO_VIDEO_THUMB;
 
-  // Asunto: beneficio + gratis sin tarjeta (apertura + conversión)
+  // Asunto: beneficio real + gratis (apertura + conversión)
   const subject = isAgency
-    ? `Parte MIR multi-vivienda — regístrate gratis (sin tarjeta)`
+    ? `Ahorra tiempo en cada llegada — check-in en el móvil del huésped`
     : isHotel
-      ? `Parte MIR por habitación — regístrate gratis (sin tarjeta)`
-      : `Parte de viajeros MIR — regístrate gratis, sin tarjeta`;
+      ? `Ahorra tiempo en cada llegada — check-in en el móvil del huésped`
+      : `Ahorra tiempo en cada llegada — check-in en el móvil del huésped`;
 
   const preheader = isAgency
-    ? 'Gratis sin tarjeta. Parte MIR + limpiezas + reservas directas. 1 clic.'
+    ? 'Gratis sin tarjeta. SES Hospedajes + limpiezas + reservas directas. 1 clic → 2 pasos.'
     : isHotel
-      ? 'Gratis sin tarjeta. Cumple el RD 933/2021 y simplifica el hotel. 1 clic.'
-      : 'Gratis sin tarjeta. Parte MIR + limpiezas + reservas directas (menos comisiones).';
+      ? 'Gratis sin tarjeta. Parte a SES Hospedajes por habitación. 1 clic → 2 pasos.'
+      : 'Gratis sin tarjeta. SES Hospedajes + limpiezas + reservas directas. 1 clic → 2 pasos.';
 
   // Hook + valor (sin “encontré tu email”)
   const pitchBody = isAgency
-    ? `Si gestionáis viviendas turísticas, el parte de viajeros al MIR / SES Hospedajes es obligatorio. Con Delfín Check-in el huésped rellena, vosotros revisáis y enviáis — también desde el móvil. Y no os quedáis solo en el parte: calendarios de limpieza, reservas directas (menos dependencia de Airbnb/Booking y sus comisiones) y un panel pensado para portfolio. Para gestoras con volumen: trato prioritario.`
+    ? `Si gestionáis viviendas turísticas, el parte de viajeros a SES Hospedajes es obligatorio. Con Delfín Check-in el huésped rellena en el móvil, vosotros revisáis y enviáis. En el plan gratis el envío es manual; con Plan Check-in (~2€/mes) es automático. También: limpiezas, reservas directas (menos comisiones Airbnb/Booking) y panel multi-vivienda.`
     : isHotel
-      ? `En hoteles y hostales el RD 933/2021 también exige registrar viajeros y enviar el parte al MIR. Con Delfín Check-in lo hacéis por habitación/estancia, fácil en móvil. Además: organización del día a día (limpieza, estancias) y canal de reservas directas para no depender solo de las OTAs.`
-      : `Si tienes un alquiler vacacional en España, el RD 933/2021 te obliga a enviar el parte de viajeros al MIR / SES Hospedajes. Con Delfín Check-in el huésped rellena el parte, tú lo revisas y lo envías al Ministerio — en un minutito, también desde el móvil.
+      ? `En hoteles y hostales el RD 933/2021 exige registrar viajeros en SES Hospedajes. Con Delfín Check-in el huésped hace el check-in en el móvil. Gratis: envío manual del parte + panel y extras. Plan Check-in (~2€/mes): envío automático. Además limpiezas y reservas directas.`
+      : `Si tienes un alquiler vacacional en España, debes enviar el parte de viajeros a SES Hospedajes. Con Delfín Check-in el huésped rellena en el móvil — ahorras tiempo en cada llegada.
 
-Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del anfitrión: calendario de limpiezas, reservas directas (para reducir comisiones de Airbnb y Booking) y todo el día a día del alojamiento en un solo sitio.`;
+Gratis (sin tarjeta): formulario, panel, limpiezas y envío manual a SES Hospedajes. Plan Check-in (~2€/mes): envío automático. Cuando crezcas, reservas directas y reputación Google están en planes superiores.`;
 
   const trialLine = isAgency
-    ? `Empezad gratis, sin tarjeta. En un clic estáis dentro. Cuando queráis el envío automático del parte de viajeros al MIR, el Plan Check-in es 2€/mes + 2€ por propiedad adicional — claro, sin sorpresas.`
+    ? `Empezad gratis, sin tarjeta. 1 clic y 2 pantallas: creáis la unidad y tenéis el enlace del huésped. El resto (empresa, SES Hospedajes, cobros) queda en la campanita.`
     : isHotel
-      ? `Empezad gratis, sin tarjeta. En un clic estáis dentro. El Plan Check-in (envío automático MIR) es 2€/mes + 2€ por propiedad adicional.`
-      : `Regístrate gratis (1 propiedad), sin tarjeta. Un clic y en un minutito estás dentro. Si más adelante quieres el envío automático del parte de viajeros, el Plan Check-in cuesta 2€/mes + 2€ por cada propiedad adicional; si no, te quedas en gratis o te das de baja.`;
+      ? `Empezad gratis, sin tarjeta. 1 clic y 2 pantallas: habitación + enlace del huésped. Plan Check-in = envío automático a SES Hospedajes (2€/mes + 2€/propiedad).`
+      : `Regístrate gratis (sin tarjeta). 1 clic y 2 pantallas: creas tu unidad y copias el enlace del huésped. Si quieres envío automático a SES Hospedajes, Plan Check-in desde 2€/mes.`;
 
-  const ctaLabel = 'Regístrate gratis — sin tarjeta';
+  const ctaLabel = 'Empezar gratis — 2 pasos';
 
   const socialText = [
     'Síguenos:',

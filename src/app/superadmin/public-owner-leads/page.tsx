@@ -60,7 +60,9 @@ type IntakeRow = {
   created_at: string;
 };
 
+/** Meta de negocio: onboardings completados / día (no solo altas/clic). */
 const SIGNUP_DAILY_GOAL = 20;
+const ONBOARDING_DAILY_GOAL = 20;
 
 function fmt(d: string | null | undefined): string {
   if (!d) return '—';
@@ -95,6 +97,7 @@ export default function PublicOwnerLeadsAdminPage() {
     '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram 12:00 + 16:00 + 21:00'
   );
   const [reserveReady, setReserveReady] = useState(0);
+  const [onboardingsToday, setOnboardingsToday] = useState(0);
   const [wavesStillRun, setWavesStillRun] = useState(true);
   const [stats, setStats] = useState<Stats>({});
   const [today, setToday] = useState<Today>({});
@@ -148,6 +151,7 @@ export default function PublicOwnerLeadsAdminPage() {
         )
       );
       setReserveReady(Number(data.reserve_ready || 0));
+      setOnboardingsToday(Number(data.onboardings_today || 0));
       setWavesStillRun(
         data.waves_still_run != null
           ? Boolean(data.waves_still_run)
@@ -233,8 +237,11 @@ export default function PublicOwnerLeadsAdminPage() {
   const sentToday = Number(today.sent_today || 0);
   const signupsToday = Number(today.signed_up_today || 0);
   const sendPct = Math.min(100, Math.round((sentToday / Math.max(hardCap, 1)) * 100));
-  const signupPct = Math.min(100, Math.round((signupsToday / SIGNUP_DAILY_GOAL) * 100));
-  const signupGoalMet = signupsToday >= SIGNUP_DAILY_GOAL;
+  const signupPct = Math.min(
+    100,
+    Math.round((onboardingsToday / Math.max(ONBOARDING_DAILY_GOAL, 1)) * 100)
+  );
+  const signupGoalMet = onboardingsToday >= ONBOARDING_DAILY_GOAL;
   const waveSize = dailyTarget; // 50 por oleada (Zoho-safe)
   const queueTarget = hardCap; // recámara = tope día (1000)
   const delaySec = Math.round((delayMs / 1000) * 10) / 10;
@@ -251,11 +258,11 @@ export default function PublicOwnerLeadsAdminPage() {
               Captación propietarios
             </h1>
             <p className="mt-1 text-slate-600 max-w-2xl text-[15px] leading-relaxed">
-              Meta <strong className="text-slate-900">{SIGNUP_DAILY_GOAL} altas / día</strong> · tope{' '}
-              <strong className="text-slate-900">{hardCap} mails / día</strong> en {wavesPerDay} oleadas ×
-              {waveSize} ({scheduleHint}) · delay {delaySec}s · solo <strong>3 Telegram/día</strong> (12:00 ·
-              16:00 · cierre 21:00) · si altas ≥20 se para y la cola queda para mañana · cola siempre ≥
-              {queueTarget}. Cola ahora: <strong className="text-slate-900">{reserveReady}</strong>.
+              Meta <strong className="text-slate-900">{ONBOARDING_DAILY_GOAL} onboardings completos / día</strong>{' '}
+              · tope <strong className="text-slate-900">{hardCap} mails / día</strong> en {wavesPerDay}{' '}
+              oleadas ×{waveSize} ({scheduleHint}) · delay {delaySec}s · Telegram 12:00 · 16:00 · 21:00 · si
+              onboardings ≥{ONBOARDING_DAILY_GOAL} se para · cola ≥{queueTarget}. Cola ahora:{' '}
+              <strong className="text-slate-900">{reserveReady}</strong>.
             </p>
             {outreachProvider && (
               <p
@@ -381,7 +388,9 @@ export default function PublicOwnerLeadsAdminPage() {
 
               <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
                 <div className="flex justify-between items-baseline gap-2">
-                  <h2 className="text-sm font-semibold text-slate-800">Altas nuevas hoy (KPI)</h2>
+                  <h2 className="text-sm font-semibold text-slate-800">
+                    Onboardings completos hoy (KPI)
+                  </h2>
                   <span
                     className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                       signupsToday > SIGNUP_DAILY_GOAL
@@ -391,16 +400,19 @@ export default function PublicOwnerLeadsAdminPage() {
                           : 'bg-amber-100 text-amber-900'
                     }`}
                   >
-                    {signupsToday > SIGNUP_DAILY_GOAL
-                      ? `¡Más de ${SIGNUP_DAILY_GOAL}!`
+                    {onboardingsToday > ONBOARDING_DAILY_GOAL
+                      ? `¡Más de ${ONBOARDING_DAILY_GOAL}!`
                       : signupGoalMet
                         ? 'Meta OK — cola para mañana'
                         : 'Por debajo → oleadas todo el día'}
                   </span>
                 </div>
                 <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
-                  {signupsToday}
-                  <span className="text-lg text-slate-400 font-medium"> / {SIGNUP_DAILY_GOAL}</span>
+                  {onboardingsToday}
+                  <span className="text-lg text-slate-400 font-medium">
+                    {' '}
+                    / {ONBOARDING_DAILY_GOAL}
+                  </span>
                 </p>
                 <div className="mt-3 h-2.5 rounded-full bg-slate-100 overflow-hidden">
                   <div
@@ -410,8 +422,8 @@ export default function PublicOwnerLeadsAdminPage() {
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
                   {wavesStillRun
-                    ? `Aún <${SIGNUP_DAILY_GOAL} altas → cada ~30 min se envían hasta ${waveSize} (nunca repetidos).`
-                    : `Ya hay ${SIGNUP_DAILY_GOAL}+ altas → no más envíos hoy; cola guardada para mañana.`}
+                    ? `Aún <${ONBOARDING_DAILY_GOAL} onboardings → cada ~30 min hasta ${waveSize} mails (altas hoy: ${signupsToday}).`
+                    : `Ya hay ${ONBOARDING_DAILY_GOAL}+ onboardings → no más envíos hoy; cola para mañana.`}
                 </p>
               </div>
 

@@ -87,10 +87,15 @@ export default function OnboardingPage() {
   const BTN_NAV = 'flex flex-col-reverse sm:flex-row sm:justify-between gap-3 mt-8';
   const BTN_NAV_ACTIONS = 'flex flex-col sm:flex-row gap-3 w-full sm:w-auto';
   const fromMobileApp = searchParams?.get('source') === 'mobile_app';
-  /** Cold outreach 1-clic: onboarding ligero (entrar al panel sin wizard completo). */
+  /** Cold outreach 1-clic: onboarding lite 2 pantallas (unidad → valor). */
   const outreachLite = searchParams?.get('src') === 'outreach';
   const getStepLabel = (step: number) =>
     t(`progress.stepLabels.${step}` as 'progress.stepLabels.1');
+  const [litePhase, setLitePhase] = useState<1 | 2>(1);
+  const [liteReady, setLiteReady] = useState(false);
+  const [guestFormUrl, setGuestFormUrl] = useState('');
+  const [copiedForm, setCopiedForm] = useState(false);
+  const liteBootRef = useRef(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -785,6 +790,23 @@ export default function OnboardingPage() {
       setFormData(prev => ({ ...prev, propertyAdded: true }));
       setError('');
       await loadRooms();
+
+      if (outreachLite) {
+        try {
+          const me = await fetch('/api/tenant', { credentials: 'include' });
+          const meData = await me.json().catch(() => ({}));
+          const tid = String(
+            meData?.tenant?.id || meData?.id || meData?.tenantId || ''
+          );
+          const origin = typeof window !== 'undefined' ? window.location.origin : '';
+          if (tid) {
+            setGuestFormUrl(`${origin}/api/public/form-redirect/${tid}`);
+          }
+        } catch {
+          /* ignore */
+        }
+        setLitePhase(2);
+      }
     } catch (error) {
       setError(t('errors.addPropertyFailed'));
     } finally {
@@ -862,8 +884,7 @@ export default function OnboardingPage() {
   };
 
   /**
-   * Outreach 1-clic: saltar wizard largo → ir directo a crear la 1ª habitación (FREE).
-   * Antes marcaba completed sin unidades y casi nadie terminaba de crear habitaciones.
+   * Outreach 1-clic: wizard de 2 pantallas (tipo + unidad → valor / SES Hospedajes).
    */
   const handleOutreachLiteEnterDashboard = async () => {
     setError('');
@@ -874,6 +895,7 @@ export default function OnboardingPage() {
       selectedPlanId: 'free',
       unitCount: 1,
       checkoutCompleted: true,
+      lodgingType: 'hostal',
     }));
     try {
       await fetch('/api/tenant/onboarding-status', {
@@ -885,13 +907,29 @@ export default function OnboardingPage() {
           deferred_tasks: ['company', 'mir', 'stripe'],
         }),
       });
-      setCurrentStep(5);
+      setLitePhase(1);
+      setLiteReady(true);
+      setUnitNames(
+        generateDefaultUnits(1, 'hostal').map((u) => ({
+          ...u,
+          max_guests: 2,
+        }))
+      );
     } catch {
       setError(t('errors.generic'));
     } finally {
       setLoading(false);
     }
   };
+
+  /** Auto-entrar al lite cuando la sesión outreach ya está lista (sin pedir clic extra). */
+  useEffect(() => {
+    if (!outreachLite || liteBootRef.current || liteReady) return;
+    if (!tenant || magicLinkFailed || bootstrappingSession) return;
+    liteBootRef.current = true;
+    void handleOutreachLiteEnterDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outreachLite, tenant, magicLinkFailed, bootstrappingSession, liteReady]);
 
   const handleFinishStep5 = async () => {
     setError('');
@@ -1771,6 +1809,208 @@ export default function OnboardingPage() {
       </div>
     );
   };
+
+  const finishOutreachLite = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await fetch('/api/tenant/onboarding-status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          onboarding_status: 'completed',
+          deferred_tasks: ['company', 'mir', 'stripe'],
+        }),
+      });
+      try {
+        localStorage.removeItem('onboarding_progress_v1');
+      } catch {
+        /* ignore */
+      }
+      router.push(`/${locale}/dashboard`);
+    } catch {
+      setError(t('errors.completeFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyGuestForm = async () => {
+    if (!guestFormUrl) return;
+    try {
+      await navigator.clipboard.writeText(guestFormUrl);
+      setCopiedForm(true);
+      setTimeout(() => setCopiedForm(false), 2000);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  /** Flujo outreach: solo 2 pantallas. */
+  if (outreachLite && liteReady) {
+    const isHotel = formData.lodgingType === 'hostal';
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white pb-[env(safe-area-inset-bottom)]">
+        <div className="bg-white/90 backdrop-blur sticky top-0 z-30 border-b border-sky-100 pt-[env(safe-area-inset-top)]">
+          <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xl">🐬</span>
+              <div className="min-w-0">
+                <p className="font-bold text-slate-900 truncate">{t('appName')}</p>
+                <p className="text-xs text-sky-700 font-medium">
+                  {t('lite.progress', { phase: litePhase })}
+                </p>
+              </div>
+            </div>
+            <LanguageSwitcher />
+          </div>
+          <div className="max-w-lg mx-auto px-4 pb-3 flex gap-2">
+            <div className={`h-1.5 flex-1 rounded-full ${litePhase >= 1 ? 'bg-sky-600' : 'bg-slate-200'}`} />
+            <div className={`h-1.5 flex-1 rounded-full ${litePhase >= 2 ? 'bg-sky-600' : 'bg-slate-200'}`} />
+          </div>
+        </div>
+
+        <div className="max-w-lg mx-auto px-4 py-6">
+          {error && (
+            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+              {error}
+            </div>
+          )}
+
+          {litePhase === 1 && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 leading-snug">
+                  {t('lite.step1Title')}
+                </h1>
+                <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                  {t('lite.step1Body')}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-slate-800 mb-2">{t('lite.typeLabel')}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((p) => ({ ...p, lodgingType: 'hostal', unitCount: 1 }));
+                      setUnitNames(
+                        generateDefaultUnits(1, 'hostal').map((u) => ({ ...u, max_guests: 2 }))
+                      );
+                    }}
+                    className={`text-left rounded-xl border-2 p-4 min-h-[44px] touch-manipulation ${
+                      isHotel ? 'border-sky-600 ring-2 ring-sky-100 bg-sky-50' : 'border-slate-200'
+                    }`}
+                  >
+                    <p className="font-bold text-slate-900">{t('lite.typeHotel')}</p>
+                    <p className="text-xs text-slate-600 mt-1">{t('lite.typeHotelHint')}</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((p) => ({ ...p, lodgingType: 'apartamentos', unitCount: 1 }));
+                      setUnitNames(
+                        generateDefaultUnits(1, 'apartamentos').map((u) => ({
+                          ...u,
+                          max_guests: 2,
+                        }))
+                      );
+                    }}
+                    className={`text-left rounded-xl border-2 p-4 min-h-[44px] touch-manipulation ${
+                      !isHotel ? 'border-sky-600 ring-2 ring-sky-100 bg-sky-50' : 'border-slate-200'
+                    }`}
+                  >
+                    <p className="font-bold text-slate-900">{t('lite.typeApartment')}</p>
+                    <p className="text-xs text-slate-600 mt-1">{t('lite.typeApartmentHint')}</p>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-800 mb-1">
+                  {isHotel ? t('lite.unitNameHotel') : t('lite.unitNameApartment')}
+                </label>
+                <input
+                  type="text"
+                  value={unitNames[0]?.name || ''}
+                  onChange={(e) =>
+                    setUnitNames((prev) =>
+                      prev.length
+                        ? prev.map((x, i) => (i === 0 ? { ...x, name: e.target.value } : x))
+                        : [{ id: '1', name: e.target.value, max_guests: 2 }]
+                    )
+                  }
+                  className="w-full px-3 py-3 border border-slate-300 rounded-xl text-base min-h-[44px]"
+                  placeholder={isHotel ? 'Habitación 1' : 'Apartamento 1'}
+                />
+              </div>
+
+              <button
+                type="button"
+                disabled={loading || !(unitNames[0]?.name || '').trim()}
+                onClick={() => void handleAddProperty()}
+                className={`w-full ${BTN_PRIMARY}`}
+              >
+                {loading ? t('lite.creating') : t('lite.createCta')}
+              </button>
+              <p className="text-xs text-slate-500 text-center">{t('lite.freeNote')}</p>
+            </div>
+          )}
+
+          {litePhase === 2 && (
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm space-y-5">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 leading-snug">
+                  {t('lite.step2Title')}
+                </h1>
+                <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                  {t('lite.step2Body')}
+                </p>
+              </div>
+
+              {guestFormUrl && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 space-y-3">
+                  <p className="text-sm font-semibold text-emerald-950">{t('lite.formLabel')}</p>
+                  <p className="text-xs break-all text-emerald-900/80">{guestFormUrl}</p>
+                  <button
+                    type="button"
+                    onClick={() => void copyGuestForm()}
+                    className={BTN_OUTLINE}
+                  >
+                    {copiedForm ? t('lite.copied') : t('lite.copyForm')}
+                  </button>
+                </div>
+              )}
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 space-y-2">
+                <p className="font-semibold text-slate-900">{t('lite.plansTitle')}</p>
+                <p>{t('lite.plansFree')}</p>
+                <p>{t('lite.plansCheckin')}</p>
+              </div>
+
+              <a
+                href={`/${locale}/upgrade-plan?plan=checkin&source=outreach_lite`}
+                className={`block w-full text-center ${BTN_PRIMARY}`}
+              >
+                {t('lite.upgradeCheckin')}
+              </a>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void finishOutreachLite()}
+                className={`w-full ${BTN_SECONDARY}`}
+              >
+                {loading ? t('lite.entering') : t('lite.goDashboard')}
+              </button>
+              <p className="text-xs text-slate-500 text-center">{t('lite.bellNote')}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-[env(safe-area-inset-bottom)]">

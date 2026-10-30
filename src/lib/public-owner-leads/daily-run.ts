@@ -11,6 +11,7 @@ import {
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
   PUBLIC_OWNER_LEADS_MIN_QUEUED,
   PUBLIC_OWNER_LEADS_WAVE_MAX,
+  PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from './constants';
 import { isPlausiblePublicEmail, scoreEmailForSource } from './emails';
@@ -34,6 +35,8 @@ export type DailyOutreachResult = {
   dailyTarget: number;
   sentTodayBefore: number;
   signupsTodayBefore: number;
+  /** Onboardings completed today (Europe/Madrid) — meta de negocio. */
+  onboardingsTodayBefore?: number;
   budget: number;
   skippedBecauseGoalMet?: boolean;
   sourcesProcessed: number;
@@ -93,6 +96,18 @@ async function countSignupsToday(): Promise<number> {
     FROM public_owner_leads
     WHERE signed_up_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
       AT TIME ZONE 'Europe/Madrid'
+  `;
+  return Number(r.rows[0]?.n || 0);
+}
+
+/** Onboardings completados hoy (meta de negocio: 20/día). */
+async function countCompletedOnboardingsToday(): Promise<number> {
+  const r = await sql`
+    SELECT COUNT(*)::int AS n
+    FROM tenants
+    WHERE onboarding_status = 'completed'
+      AND updated_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+        AT TIME ZONE 'Europe/Madrid'
   `;
   return Number(r.rows[0]?.n || 0);
 }
@@ -280,12 +295,13 @@ export async function runDailyPublicOwnerLeads(opts?: {
 
   const sentTodayBefore = await countSentToday();
   const signupsTodayBefore = await countSignupsToday();
+  const onboardingsTodayBefore = await countCompletedOnboardingsToday();
 
-  // Cualquier oleada de envío: si ya hay ≥20 altas → no enviar; cola queda para mañana.
+  // Oleadas: si ya hay ≥20 onboardings completados hoy → no enviar; cola para mañana.
   // prepare: siempre rellena cola (maxSend=0). Aunque no enviemos: SIEMPRE refill MIN_QUEUED.
   if (
     wave !== 'prepare' &&
-    signupsTodayBefore >= PUBLIC_OWNER_SIGNUPS_DAILY_GOAL
+    onboardingsTodayBefore >= PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL
   ) {
     let refillSummary: DailyOutreachResult['refill'];
     if (!dryRun) {
@@ -313,6 +329,7 @@ export async function runDailyPublicOwnerLeads(opts?: {
       dailyTarget: cap,
       sentTodayBefore,
       signupsTodayBefore,
+      onboardingsTodayBefore,
       budget: 0,
       skippedBecauseGoalMet: true,
       sourcesProcessed: 0,
@@ -674,6 +691,7 @@ export async function runDailyPublicOwnerLeads(opts?: {
     dailyTarget: cap,
     sentTodayBefore,
     signupsTodayBefore,
+    onboardingsTodayBefore,
     budget: sendBudget,
     sourcesProcessed: extract.processed,
     leadsDiscovered: extract.discovered,
