@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { ListChecks, X } from 'lucide-react';
+import { readOutreachStickyClient } from '@/lib/onboarding-outreach';
 
 type ProgressResponse = {
   success?: boolean;
@@ -51,6 +52,12 @@ export default function OnboardingIncompleteBanner() {
   if (pendingCount <= 0) return null;
 
   const isDeferredSetup = Boolean(data.deferred_setup && data.onboarding_status === 'completed');
+  const outreachResume = readOutreachStickyClient();
+  const onboardingHref = isDeferredSetup
+    ? `/${locale}/settings`
+    : outreachResume
+      ? `/${locale}/onboarding?src=outreach`
+      : `/${locale}/onboarding`;
 
   const stepLabels = (data.pending_steps || [])
     .slice(0, 4)
@@ -84,7 +91,7 @@ export default function OnboardingIncompleteBanner() {
           ) : null}
           <div className="mt-3 flex flex-wrap gap-2">
             <Link
-              href={isDeferredSetup ? `/${locale}/settings` : `/${locale}/onboarding`}
+              href={onboardingHref}
               className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 min-h-[44px]"
             >
               {isDeferredSetup ? t('onboardingBanner.ctaDeferred') : t('onboardingBanner.cta')}

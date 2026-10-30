@@ -724,6 +724,10 @@ export async function middleware(req: NextRequest) {
       if ((onboardingStatus === 'pending' || onboardingStatus === 'in_progress') && !isOnboardingPath) {
         const targetLocale = localeFromPath || defaultLocale;
         const onboardingUrl = new URL(`/${targetLocale}/onboarding`, req.url);
+        // Cold outreach: no perder el lite de 2 pasos al forzar el gate de onboarding.
+        if (req.cookies.get('onboarding_src_outreach')?.value === '1') {
+          onboardingUrl.searchParams.set('src', 'outreach');
+        }
         return NextResponse.redirect(onboardingUrl);
       }
 
