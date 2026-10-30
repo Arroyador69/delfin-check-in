@@ -30,8 +30,17 @@ export const PUBLIC_OWNER_LEADS_AFTERNOON_MAX = PUBLIC_OWNER_LEADS_WAVE_MAX;
 export const PUBLIC_OWNER_LEADS_EVENING_MAX = PUBLIC_OWNER_LEADS_WAVE_MAX;
 export const PUBLIC_OWNER_LEADS_NIGHT_MAX = PUBLIC_OWNER_LEADS_WAVE_MAX;
 
-/** KPI: 20 propietarios/agencias nuevos / día. */
+/**
+ * KPI operativo (legacy altas/clic): se mantiene por compat.
+ * La meta de negocio real es ONBOARDINGS_DAILY_GOAL.
+ */
 export const PUBLIC_OWNER_SIGNUPS_DAILY_GOAL = 20;
+
+/**
+ * Meta diaria de negocio: onboardings completados (1ª unidad creada + status completed).
+ * Las oleadas paran al alcanzar este número (Europe/Madrid).
+ */
+export const PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL = 20;
 
 /**
  * Tras CADA envío del cron, la cola debe volver a este nivel (~1000).

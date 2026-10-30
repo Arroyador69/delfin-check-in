@@ -10,6 +10,7 @@ import {
   PUBLIC_OWNER_LEADS_TG_MORNING_SLOT,
   PUBLIC_OWNER_LEADS_TG_AFTERNOON_SLOT,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
+  PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
 } from '../src/lib/public-owner-leads/constants';
 import { isBlockedOutreachHost } from '../src/lib/public-owner-leads/blocked-hosts';
 import { buildColdOutreachEmail } from '../src/lib/public-owner-leads/template';
@@ -27,6 +28,7 @@ describe('public-owner-leads daily campaign', () => {
     expect(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP).toBe(1000);
     expect(PUBLIC_OWNER_LEADS_MIN_QUEUED).toBe(1000);
     expect(PUBLIC_OWNER_SIGNUPS_DAILY_GOAL).toBe(20);
+    expect(PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL).toBe(20);
     expect(PUBLIC_OWNER_LEADS_WAVE_MAX * PUBLIC_OWNER_LEADS_WAVES_PER_DAY).toBe(
       PUBLIC_OWNER_LEADS_DAILY_HARD_CAP
     );
@@ -67,10 +69,9 @@ describe('public-owner-leads daily campaign', () => {
       optOutUrl: 'https://admin.delfincheckin.com/es/baja-outreach?e=x&s=y',
       signupUrl: 'https://delfincheckin.com/?utm_campaign=public_owner_leads_es',
     });
-    expect(mail.subject.toLowerCase()).toMatch(/gratis/);
-    expect(mail.html).toMatch(/Reg[ií]strate gratis/i);
+    expect(mail.subject.toLowerCase()).toMatch(/ahorra tiempo|llegada/);
+    expect(mail.html).toMatch(/Empezar gratis|2 pasos/i);
     expect(mail.html).toMatch(/sin tarjeta/i);
-    expect(mail.html).toMatch(/minutito/i);
     expect(mail.html).toContain('Síguenos');
     expect(mail.html).toContain('Instagram');
     expect(mail.html).toContain('Facebook');
@@ -80,9 +81,9 @@ describe('public-owner-leads daily campaign', () => {
     expect(mail.html).toMatch(/width="24"[^>]*height="24"|height="24"[^>]*width="24"/);
     expect(mail.html).not.toMatch(/tenant|onboarding|cron|API/i);
     expect(mail.html).not.toMatch(/listas compradas|publicado en/i);
-    expect(mail.html).toContain('MIR');
+    expect(mail.html).toMatch(/SES Hospedajes/i);
     expect(mail.html).toMatch(/2€/);
-    expect(mail.html).toMatch(/Reservas directas|limpieza/i);
+    expect(mail.html).toMatch(/reservas directas|limpieza/i);
     expect(mail.text).toContain('baja');
   });
 });

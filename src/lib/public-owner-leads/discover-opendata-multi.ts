@@ -33,6 +33,27 @@ export const OPENDATA_SOURCES = {
     sep: ';' as const,
     encoding: 'utf8' as const,
   },
+  gva_hoteles: {
+    id: 'gva_hoteles',
+    label: 'Comunitat Valenciana · hoteles',
+    url: 'https://dadesobertes.gva.es/dataset/247d0314-ecb0-4d25-a0f3-bd3d977fc911/resource/14c4f098-0d26-4b8b-aa7d-9c670632748a/download/listarthoteles_20260317.csv',
+    sep: ';' as const,
+    encoding: 'utf8' as const,
+  },
+  gva_campings: {
+    id: 'gva_campings',
+    label: 'Comunitat Valenciana · campings',
+    url: 'https://dadesobertes.gva.es/dataset/2d606447-e418-49fd-94bd-aa87ffe849a0/resource/2ddaf823-5da4-4459-aa57-5bfe9f9eb474/download/listartcampings_20241229.csv',
+    sep: ';' as const,
+    encoding: 'utf8' as const,
+  },
+  gva_albergues: {
+    id: 'gva_albergues',
+    label: 'Comunitat Valenciana · albergues',
+    url: 'https://dadesobertes.gva.es/dataset/7b1766e8-cd5a-41fd-8867-825b0d6a74ce/resource/2ccc33a9-0e63-4bcd-a3af-f5b94c5787d0/download/lista-de-albergues.csv',
+    sep: ';' as const,
+    encoding: 'utf8' as const,
+  },
 } as const;
 
 export type OpenDataSourceId = keyof typeof OPENDATA_SOURCES;

@@ -25,8 +25,8 @@ describe('cold template', () => {
       sourceUrl: 'https://b.es/contacto',
       optOutUrl: 'https://admin.delfincheckin.com/es/baja-outreach?e=x&s=y',
     });
-    expect(mail.subject).toMatch(/gratis/i);
-    expect(mail.subject).toMatch(/parte|MIR/i);
+    expect(mail.subject).toMatch(/ahorra tiempo|llegada|check-in/i);
+    expect(mail.html + mail.text).toMatch(/SES Hospedajes/i);
     // No quemar confianza: no mencionar de dónde salió el email
     expect(mail.html).not.toContain('https://b.es/contacto');
     expect(mail.html).not.toMatch(/listas compradas/i);
