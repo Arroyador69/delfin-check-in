@@ -1883,8 +1883,37 @@ export default function OnboardingPage() {
     }
   };
 
-  /** Flujo outreach: solo 2 pantallas. */
-  if (outreachLite && liteReady) {
+  /** Flujo outreach: NUNCA mostrar el wizard de 6 pasos. */
+  if (outreachLite) {
+    if (!liteReady) {
+      return (
+        <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex items-center justify-center px-4">
+          <div className="max-w-sm w-full rounded-2xl border border-sky-100 bg-white p-6 text-center shadow-sm">
+            <p className="text-3xl mb-3">🐬</p>
+            <p className="font-bold text-slate-900 text-lg">{t('appName')}</p>
+            <p className="mt-2 text-sm text-sky-800 font-medium">
+              {bootstrappingSession || loading
+                ? t('lite.booting')
+                : t('lite.progress', { phase: 1 })}
+            </p>
+            <p className="mt-3 text-xs text-slate-500">{t('lite.bootHint')}</p>
+            {error && (
+              <p className="mt-4 text-sm text-rose-700 whitespace-pre-wrap">{error}</p>
+            )}
+            {magicLinkFailed && (
+              <button
+                type="button"
+                className={`mt-4 w-full ${BTN_PRIMARY}`}
+                onClick={() => void handleOutreachLiteEnterDashboard()}
+              >
+                {t('lite.createCta')}
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     const isHotel = formData.lodgingType === 'hostal';
     return (
       <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white pb-[env(safe-area-inset-bottom)]">
