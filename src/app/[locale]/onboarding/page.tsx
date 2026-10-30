@@ -1841,29 +1841,70 @@ export default function OnboardingPage() {
     );
   };
 
+  const completeOutreachLiteDeferred = async (): Promise<boolean> => {
+    const res = await fetch('/api/tenant/onboarding-status', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        onboarding_status: 'completed',
+        deferred_tasks: ['company', 'mir', 'stripe'],
+      }),
+    });
+    if (!res.ok) return false;
+    try {
+      localStorage.removeItem('onboarding_progress_v1');
+    } catch {
+      /* ignore */
+    }
+    clearOutreachStickyClient();
+    return true;
+  };
+
+  /** Cierra el lite y entra al panel gratis (resto en campanita). */
   const finishOutreachLite = async () => {
     setLoading(true);
     setError('');
     try {
-      await fetch('/api/tenant/onboarding-status', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          onboarding_status: 'completed',
-          deferred_tasks: ['company', 'mir', 'stripe'],
-        }),
-      });
-      try {
-        localStorage.removeItem('onboarding_progress_v1');
-      } catch {
-        /* ignore */
+      const ok = await completeOutreachLiteDeferred();
+      if (!ok) {
+        setError(t('errors.completeFailed'));
+        return;
       }
-      clearOutreachStickyClient();
       router.push(`/${locale}/dashboard`);
     } catch {
       setError(t('errors.completeFailed'));
     } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Activar Plan Check-in desde lite: completa onboarding diferido y abre Polar
+   * (evita el bucle middleware → onboarding al ir a /upgrade-plan con status pending).
+   */
+  const startOutreachCheckinCheckout = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const ok = await completeOutreachLiteDeferred();
+      if (!ok) {
+        setError(t('errors.completeFailed'));
+        setLoading(false);
+        return;
+      }
+      const roomCount = Math.max(1, rooms.length || formData.unitCount || 1);
+      const url = new URL('/api/polar/upgrade', window.location.origin);
+      url.searchParams.set('plan', 'checkin');
+      url.searchParams.set('rooms', String(roomCount));
+      url.searchParams.set('interval', 'month');
+      url.searchParams.set('locale', String(locale || 'es'));
+      url.searchParams.set('source', 'outreach_lite');
+      url.searchParams.set('success_url', `/${locale}/dashboard?upgraded=checkin`);
+      url.searchParams.set('return_url', `/${locale}/dashboard`);
+      window.location.href = url.toString();
+    } catch {
+      setError(t('errors.completeFailed'));
       setLoading(false);
     }
   };
@@ -2051,12 +2092,14 @@ export default function OnboardingPage() {
                 <p>{t('lite.plansCheckin')}</p>
               </div>
 
-              <a
-                href={`/${locale}/upgrade-plan?plan=checkin&source=outreach_lite`}
-                className={`block w-full text-center ${BTN_PRIMARY}`}
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void startOutreachCheckinCheckout()}
+                className={`w-full ${BTN_PRIMARY}`}
               >
-                {t('lite.upgradeCheckin')}
-              </a>
+                {loading ? t('lite.openingCheckout') : t('lite.upgradeCheckin')}
+              </button>
               <button
                 type="button"
                 disabled={loading}

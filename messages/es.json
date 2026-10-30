@@ -611,10 +611,11 @@
       "plansTitle": "Qué incluye",
       "plansFree": "Gratis: formulario, panel, limpiezas y envío manual a SES Hospedajes + extras Delfín.",
       "plansCheckin": "Plan Check-in (~2€/mes + 2€/propiedad): envío automático del parte a SES Hospedajes.",
-      "upgradeCheckin": "Activar Plan Check-in (envío automático)",
-      "goDashboard": "Entrar al panel (completar después)",
+      "upgradeCheckin": "Activar envío automático · desde ~2€/mes",
+      "openingCheckout": "Abriendo pago seguro…",
+      "goDashboard": "Entrar al panel gratis (completar después)",
       "entering": "Entrando…",
-      "bellNote": "Datos de empresa, SES Hospedajes y cobros quedan en la campanita 🔔 del panel."
+      "bellNote": "Puedes pagar ahora o más tarde. Empresa, SES Hospedajes y cobros quedan en la campanita 🔔."
     },
     "step2": {
       "title": "📋 Datos del alojamiento",
