@@ -6,6 +6,7 @@ import {
   issueFreshOnboardingCredentials,
   onboardingEmailVariantForOwner,
 } from '@/lib/onboarding-magic-link';
+import { ONBOARDING_OUTREACH_COOKIE, isOutreachSrc } from '@/lib/onboarding-outreach';
 
 export const runtime = 'nodejs';
 
@@ -31,6 +32,8 @@ export async function POST(req: NextRequest) {
     }
     const locale =
       typeof body?.locale === 'string' && body.locale.length === 2 ? body.locale : 'es';
+    const outreachLite =
+      isOutreachSrc(body?.src) || req.cookies.get(ONBOARDING_OUTREACH_COOKIE)?.value === '1';
 
     const owner = await findOnboardingOwnerByEmail(email);
 
@@ -49,7 +52,11 @@ export async function POST(req: NextRequest) {
     }
 
     const { token, tempPassword } = await issueFreshOnboardingCredentials(owner.user_id);
-    const onboardingUrl = buildOnboardingUrl(token, locale);
+    const onboardingUrl = buildOnboardingUrl(
+      token,
+      locale,
+      outreachLite ? { src: 'outreach' } : undefined
+    );
 
     try {
       await sendOnboardingEmail({

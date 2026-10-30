@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { signupFreeActivate } from '@/lib/signup-free-activate';
 import { decodeOptOutEmail } from '@/lib/public-owner-leads/optout';
 import { verifyOutreachActivateSignature } from '@/lib/public-owner-leads/activate-link';
+import { ONBOARDING_OUTREACH_COOKIE } from '@/lib/onboarding-outreach';
 import {
   buildOnboardingUrl,
   findOnboardingOwnerByEmail,
@@ -140,7 +141,15 @@ export async function GET(req: NextRequest) {
     }
 
     if (onboardingUrl) {
-      return NextResponse.redirect(onboardingUrl, 302);
+      const res = NextResponse.redirect(onboardingUrl, 302);
+      res.cookies.set(ONBOARDING_OUTREACH_COOKIE, '1', {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30,
+        path: '/',
+      });
+      return res;
     }
 
     if (activateRes.status === 200 || data.success) {
@@ -165,7 +174,17 @@ export async function GET(req: NextRequest) {
     // Último recurso: si ya existe tenant, intentar magic link
     try {
       const url = await resumeOnboardingRedirect(email);
-      if (url) return NextResponse.redirect(url, 302);
+      if (url) {
+        const res = NextResponse.redirect(url, 302);
+        res.cookies.set(ONBOARDING_OUTREACH_COOKIE, '1', {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 30,
+          path: '/',
+        });
+        return res;
+      }
     } catch {
       /* ignore */
     }

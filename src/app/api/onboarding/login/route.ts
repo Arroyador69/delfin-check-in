@@ -7,6 +7,7 @@ import {
   findOnboardingOwnerByEmail,
   findOnboardingOwnerByMagicToken,
 } from '@/lib/onboarding-magic-link';
+import { ONBOARDING_OUTREACH_COOKIE, isOutreachSrc } from '@/lib/onboarding-outreach';
 
 export const runtime = 'nodejs';
 
@@ -19,6 +20,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const token = body?.token;
     const emailRaw = body?.email;
+    const outreachLite =
+      isOutreachSrc(body?.src) || req.cookies.get(ONBOARDING_OUTREACH_COOKIE)?.value === '1';
 
     if (!token || typeof token !== 'string') {
       return NextResponse.json(
@@ -182,6 +185,18 @@ export async function POST(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 30,
       path: '/',
     });
+
+    // Persistente y legible por JS: middleware y UI rehidratan el lite de 2 pasos
+    // aunque se pierda ?src=outreach en un redirect.
+    if (outreachLite) {
+      res.cookies.set(ONBOARDING_OUTREACH_COOKIE, '1', {
+        httpOnly: false,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30,
+        path: '/',
+      });
+    }
 
     return res;
   } catch (error: unknown) {

@@ -15,6 +15,11 @@ import { ISO3166_ALPHA2 } from '@/lib/iso3166-alpha2';
 import TutorialVideoEmbed from '@/components/TutorialVideoEmbed';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { buildAntivirusHelpUrl } from '@/lib/onboarding-magic-link';
+import {
+  clearOutreachStickyClient,
+  persistOutreachStickyClient,
+  readOutreachStickyClient,
+} from '@/lib/onboarding-outreach';
 
 type PlanId = 'free' | 'checkin' | 'standard' | 'pro';
 type BillingInterval = 'month' | 'year';
@@ -89,7 +94,7 @@ export default function OnboardingPage() {
   const fromMobileApp = searchParams?.get('source') === 'mobile_app';
   /** Cold outreach 1-clic: onboarding lite 2 pantallas (unidad → valor). */
   const outreachFromUrl = searchParams?.get('src') === 'outreach';
-  const [outreachSticky, setOutreachSticky] = useState(false);
+  const [outreachSticky, setOutreachSticky] = useState(() => readOutreachStickyClient());
   const outreachLite = outreachFromUrl || outreachSticky;
   const getStepLabel = (step: number) =>
     t(`progress.stepLabels.${step}` as 'progress.stepLabels.1');
@@ -100,15 +105,9 @@ export default function OnboardingPage() {
   const liteBootRef = useRef(false);
 
   useEffect(() => {
-    try {
-      if (outreachFromUrl) {
-        sessionStorage.setItem('onboarding_src_outreach', '1');
-        setOutreachSticky(true);
-      } else if (sessionStorage.getItem('onboarding_src_outreach') === '1') {
-        setOutreachSticky(true);
-      }
-    } catch {
-      /* ignore */
+    if (outreachFromUrl || readOutreachStickyClient()) {
+      persistOutreachStickyClient();
+      setOutreachSticky(true);
     }
   }, [outreachFromUrl]);
   const [currentStep, setCurrentStep] = useState(1);
@@ -343,10 +342,11 @@ export default function OnboardingPage() {
     setMagicLinkFailed(false);
     setResendMessage('');
     try {
-      const payload: { token: string; email?: string } = { token };
+      const payload: { token: string; email?: string; src?: 'outreach' } = { token };
       if (emailFromUrl && emailFromUrl.includes('@')) {
         payload.email = emailFromUrl;
       }
+      if (keepOutreach) payload.src = 'outreach';
       const res = await fetch('/api/onboarding/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -362,11 +362,7 @@ export default function OnboardingPage() {
         const meRes = await fetch('/api/auth/me', { credentials: 'include' });
         if (meRes.ok) {
           if (keepOutreach) {
-            try {
-              sessionStorage.setItem('onboarding_src_outreach', '1');
-            } catch {
-              /* ignore */
-            }
+            persistOutreachStickyClient();
             setOutreachSticky(true);
           }
           router.replace(onboardingPath);
@@ -379,11 +375,7 @@ export default function OnboardingPage() {
       }
 
       if (keepOutreach) {
-        try {
-          sessionStorage.setItem('onboarding_src_outreach', '1');
-        } catch {
-          /* ignore */
-        }
+        persistOutreachStickyClient();
         setOutreachSticky(true);
       }
       router.replace(onboardingPath);
@@ -412,7 +404,11 @@ export default function OnboardingPage() {
       const res = await fetch('/api/onboarding/resend-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, locale: getLocaleFromPath() }),
+        body: JSON.stringify({
+          email,
+          locale: getLocaleFromPath(),
+          ...(outreachLite || readOutreachStickyClient() ? { src: 'outreach' } : {}),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -1860,10 +1856,10 @@ export default function OnboardingPage() {
       });
       try {
         localStorage.removeItem('onboarding_progress_v1');
-        sessionStorage.removeItem('onboarding_src_outreach');
       } catch {
         /* ignore */
       }
+      clearOutreachStickyClient();
       router.push(`/${locale}/dashboard`);
     } catch {
       setError(t('errors.completeFailed'));
