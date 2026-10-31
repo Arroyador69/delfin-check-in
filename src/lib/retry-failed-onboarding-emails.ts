@@ -13,18 +13,22 @@ import {
 } from '@/lib/onboarding-magic-link';
 import { liftFalseSmtpBounceSuppression } from '@/lib/email-suppression';
 import { isSyntheticTestEmail } from '@/lib/synthetic-test-email';
+import { isOnboardingWelcomeRetryPaused } from '@/lib/public-owner-leads/constants';
 
 export async function retryFailedOnboardingEmails(opts?: {
   dryRun?: boolean;
   max?: number;
   /** Solo este email (recover puntual). */
   email?: string;
+  /** Ignorar kill switch (reenvío manual SuperAdmin / script). */
+  force?: boolean;
 }): Promise<{
   scanned: number;
   retried: number;
   sent: number;
   skipped: number;
   errors: string[];
+  paused?: boolean;
 }> {
   const dryRun = Boolean(opts?.dryRun);
   const max = Math.min(Math.max(opts?.max ?? 15, 1), 40);
@@ -33,6 +37,19 @@ export async function retryFailedOnboardingEmails(opts?: {
   let retried = 0;
   let sent = 0;
   let skipped = 0;
+
+  if (isOnboardingWelcomeRetryPaused() && !opts?.force && !opts?.email) {
+    return {
+      scanned: 0,
+      retried: 0,
+      sent: 0,
+      skipped: 0,
+      errors: [
+        'Reintentos bienvenida pausados (ONBOARDING_WELCOME_RETRY_PAUSED / captación) — Zoho SMTP',
+      ],
+      paused: true,
+    };
+  }
 
   const meta = await sql`SELECT to_regclass('public.email_tracking') AS reg`;
   if (!meta.rows[0]?.reg) {

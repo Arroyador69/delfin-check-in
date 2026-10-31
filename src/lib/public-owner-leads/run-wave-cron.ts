@@ -5,6 +5,7 @@
  */
 
 import {
+  isPublicOwnerLeadsPaused,
   PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
   PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
@@ -51,6 +52,17 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
   const slot = madridHalfHourSlot();
   const wave: OutreachWave =
     opts?.wave || (slot != null ? waveFromSlot(slot) : 'morning');
+
+  if (isPublicOwnerLeadsPaused() && !opts?.force) {
+    return {
+      success: true,
+      wave,
+      slot: slot ?? null,
+      dryRun,
+      error:
+        'Captación pausada (PUBLIC_OWNER_LEADS_PAUSED) — sin oleadas hasta reactivar tras arreglar Zoho bienvenida',
+    };
+  }
 
   if (!opts?.force && opts?.wave == null && slot == null) {
     return {

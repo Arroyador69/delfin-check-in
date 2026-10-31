@@ -6,6 +6,35 @@
  * Si altas ≥ 20 → no se envía más ese día (cola queda para mañana).
  */
 
+/**
+ * Kill switch captación (oleadas cold).
+ * - `PUBLIC_OWNER_LEADS_PAUSED=1` → parado
+ * - `PUBLIC_OWNER_LEADS_PAUSED=0` → activo
+ * - sin env → usa el default de abajo (parado mientras Zoho bienvenida no esté OK)
+ */
+export function isPublicOwnerLeadsPaused(): boolean {
+  const v = String(process.env.PUBLIC_OWNER_LEADS_PAUSED || '')
+    .trim()
+    .toLowerCase();
+  if (v === '0' || v === 'false' || v === 'off') return false;
+  if (v === '1' || v === 'true' || v === 'on') return true;
+  // Default: pausado (arreglar SMTP bienvenida Zoho / noreply@ antes de reactivar).
+  return true;
+}
+
+/**
+ * Kill switch reintentos automáticos de bienvenida (cron email-sequences).
+ * Misma semántica que captación; override: ONBOARDING_WELCOME_RETRY_PAUSED=0|1
+ */
+export function isOnboardingWelcomeRetryPaused(): boolean {
+  const v = String(process.env.ONBOARDING_WELCOME_RETRY_PAUSED || '')
+    .trim()
+    .toLowerCase();
+  if (v === '0' || v === 'false' || v === 'off') return false;
+  if (v === '1' || v === 'true' || v === 'on') return true;
+  return isPublicOwnerLeadsPaused();
+}
+
 /** Emails por oleada (anti rate-limit Zoho). */
 export const PUBLIC_OWNER_LEADS_WAVE_MAX = 50;
 

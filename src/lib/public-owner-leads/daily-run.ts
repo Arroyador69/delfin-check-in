@@ -6,6 +6,7 @@
 import { sql } from '@/lib/db';
 import { isEmailSuppressed } from '@/lib/email-suppression';
 import {
+  isPublicOwnerLeadsPaused,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
@@ -296,6 +297,34 @@ export async function runDailyPublicOwnerLeads(opts?: {
   const sentTodayBefore = await countSentToday();
   const signupsTodayBefore = await countSignupsToday();
   const onboardingsTodayBefore = await countCompletedOnboardingsToday();
+
+  // Kill switch: sin envíos cold (prepare/refill sí pueden seguir con maxSend=0).
+  if (
+    wave !== 'prepare' &&
+    isPublicOwnerLeadsPaused() &&
+    (opts?.maxSend == null || opts.maxSend > 0)
+  ) {
+    return {
+      table_ready: true,
+      dryRun,
+      wave,
+      dailyTarget: cap,
+      sentTodayBefore,
+      signupsTodayBefore,
+      onboardingsTodayBefore,
+      budget: 0,
+      sourcesProcessed: 0,
+      leadsDiscovered: 0,
+      queued: 0,
+      sent: 0,
+      failed: 0,
+      skippedSuppressed: 0,
+      skippedBecauseGoalMet: false,
+      errors: [
+        'Captación pausada (PUBLIC_OWNER_LEADS_PAUSED) — sin oleadas hasta reactivar',
+      ],
+    };
+  }
 
   // Oleadas: si ya hay ≥20 onboardings completados hoy → no enviar; cola para mañana.
   // prepare: siempre rellena cola (maxSend=0). Aunque no enviemos: SIEMPRE refill MIN_QUEUED.
