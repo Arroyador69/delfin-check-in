@@ -9,17 +9,14 @@
 /**
  * Kill switch captación (oleadas cold).
  * - `PUBLIC_OWNER_LEADS_PAUSED=1` → parado
- * - `PUBLIC_OWNER_LEADS_PAUSED=0` → activo
- * - sin env → usa el default de abajo (parado mientras Zoho bienvenida no esté OK)
+ * - `PUBLIC_OWNER_LEADS_PAUSED=0` / sin env → activo (bienvenida vía Resend + SMTP fallback)
  */
 export function isPublicOwnerLeadsPaused(): boolean {
   const v = String(process.env.PUBLIC_OWNER_LEADS_PAUSED || '')
     .trim()
     .toLowerCase();
-  if (v === '0' || v === 'false' || v === 'off') return false;
   if (v === '1' || v === 'true' || v === 'on') return true;
-  // Default: pausado (arreglar SMTP bienvenida Zoho / noreply@ antes de reactivar).
-  return true;
+  return false;
 }
 
 /**
