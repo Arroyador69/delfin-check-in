@@ -228,7 +228,8 @@ export function onboardingEmailVariantForOwner(planType?: string | null): Onboar
   if (planType === 'checkin' || planType === 'standard' || planType === 'pro') {
     return 'web_plan_paid';
   }
-  return 'default';
+  // Free/basic (incl. SuperAdmin «Reenviar»): copy conversión 2 pasos, no wizard de 6.
+  return 'waitlist_launch';
 }
 
 /** Invalida el magic link de onboarding (p. ej. tras cambiar contraseña o completar). */

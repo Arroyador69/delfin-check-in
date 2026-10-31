@@ -56,14 +56,15 @@ function normalizeOnboardingVariant(v?: OnboardingEmailVariant): OnboardingEmail
 type EmailLocale = 'es' | 'en' | 'it' | 'pt' | 'fr' | 'fi' | 'sv';
 
 /** Texto de los 6 pasos del onboarding (HTML inline para clientes de correo). */
+/** Flujo lite outreach: 2 pantallas (contraseña + unidad). El resto se completa en el panel. */
 const ONBOARDING_STEPS_HTML: Record<EmailLocale, string> = {
-  es: '<strong>1.</strong> Contraseña de acceso &nbsp;·&nbsp; <strong>2.</strong> Datos del negocio &nbsp;·&nbsp; <strong>3.</strong> Plan &nbsp;·&nbsp; <strong>4.</strong> MIR (opcional) &nbsp;·&nbsp; <strong>5.</strong> Primera propiedad &nbsp;·&nbsp; <strong>6.</strong> Cobros',
-  en: '<strong>1.</strong> Password &nbsp;·&nbsp; <strong>2.</strong> Business details &nbsp;·&nbsp; <strong>3.</strong> Plan &nbsp;·&nbsp; <strong>4.</strong> MIR (optional) &nbsp;·&nbsp; <strong>5.</strong> First property &nbsp;·&nbsp; <strong>6.</strong> Payouts',
-  it: '<strong>1.</strong> Password &nbsp;·&nbsp; <strong>2.</strong> Dati aziendali &nbsp;·&nbsp; <strong>3.</strong> Piano &nbsp;·&nbsp; <strong>4.</strong> MIR (opzionale) &nbsp;·&nbsp; <strong>5.</strong> Prima proprietà &nbsp;·&nbsp; <strong>6.</strong> Pagamenti',
-  pt: '<strong>1.</strong> Palavra-passe &nbsp;·&nbsp; <strong>2.</strong> Dados do negócio &nbsp;·&nbsp; <strong>3.</strong> Plano &nbsp;·&nbsp; <strong>4.</strong> MIR (opcional) &nbsp;·&nbsp; <strong>5.</strong> Primeira propriedade &nbsp;·&nbsp; <strong>6.</strong> Cobranças',
-  fr: '<strong>1.</strong> Mot de passe &nbsp;·&nbsp; <strong>2.</strong> Infos entreprise &nbsp;·&nbsp; <strong>3.</strong> Forfait &nbsp;·&nbsp; <strong>4.</strong> MIR (optionnel) &nbsp;·&nbsp; <strong>5.</strong> Premier logement &nbsp;·&nbsp; <strong>6.</strong> Paiements',
-  fi: '<strong>1.</strong> Salasana &nbsp;·&nbsp; <strong>2.</strong> Yritystiedot &nbsp;·&nbsp; <strong>3.</strong> Paketti &nbsp;·&nbsp; <strong>4.</strong> MIR (valinnainen) &nbsp;·&nbsp; <strong>5.</strong> Ensimmäinen kohde &nbsp;·&nbsp; <strong>6.</strong> Maksut',
-  sv: '<strong>1.</strong> Lösenord &nbsp;·&nbsp; <strong>2.</strong> Företagsuppgifter &nbsp;·&nbsp; <strong>3.</strong> Plan &nbsp;·&nbsp; <strong>4.</strong> MIR (valfritt) &nbsp;·&nbsp; <strong>5.</strong> Första boendet &nbsp;·&nbsp; <strong>6.</strong> Utbetalningar',
+  es: '<strong>1.</strong> Elige tu contraseña &nbsp;·&nbsp; <strong>2.</strong> Crea tu primera unidad y copia el enlace del huésped',
+  en: '<strong>1.</strong> Set your password &nbsp;·&nbsp; <strong>2.</strong> Create your first unit and copy the guest link',
+  it: '<strong>1.</strong> Imposta la password &nbsp;·&nbsp; <strong>2.</strong> Crea la prima unità e copia il link ospite',
+  pt: '<strong>1.</strong> Define a palavra-passe &nbsp;·&nbsp; <strong>2.</strong> Cria a primeira unidade e copia o link do hóspede',
+  fr: '<strong>1.</strong> Choisis ton mot de passe &nbsp;·&nbsp; <strong>2.</strong> Crée ta première unité et copie le lien voyageur',
+  fi: '<strong>1.</strong> Aseta salasana &nbsp;·&nbsp; <strong>2.</strong> Luo ensimmäinen kohde ja kopioi vieraslinkki',
+  sv: '<strong>1.</strong> Välj lösenord &nbsp;·&nbsp; <strong>2.</strong> Skapa första enheten och kopiera gästlänken',
 };
 
 function normalizeEmailLocale(loc?: string | null): EmailLocale {
@@ -93,34 +94,34 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
   const base = {
     es: {
       subject: {
-        waitlist_launch: '🐬 Delfín Check-in: tu cuenta está lista — empieza gratis',
+        waitlist_launch: 'Tu cuenta Delfín Check-in está lista — entra en 1 minuto',
         web_plan_paid: '🐬 Delfín Check-in: pago confirmado — termina tu configuración',
-        default: '🐬 Delfín Check-in: configura tu alojamiento en 6 pasos',
+        default: 'Tu cuenta Delfín Check-in está lista — entra en 1 minuto',
       },
       heroTitle: {
-        waitlist_launch: 'Bienvenido a Delfín Check-in',
+        waitlist_launch: 'Entra y pruébalo gratis',
         web_plan_paid: 'Pago confirmado — ya casi está',
-        default: 'Configuración guiada en 6 pasos',
+        default: 'Entra y pruébalo gratis',
       },
       heroSubtitle: {
-        waitlist_launch: 'Plan gratuito con 1 propiedad · panel web adaptado a móvil',
+        waitlist_launch: '2 pasos · gratis · sin tarjeta · móvil u ordenador',
         web_plan_paid: 'Tu plan ya está activo · un último paso en el panel',
-        default: 'Contraseña, datos, plan, MIR, propiedad y cobros — desde el móvil también',
+        default: '2 pasos · gratis · sin tarjeta · móvil u ordenador',
       },
       bodyHeading: {
-        waitlist_launch: '¡Gracias por registrarte!',
+        waitlist_launch: 'Tu acceso ya está activo',
         web_plan_paid: 'Continúa donde lo dejaste',
-        default: 'Tu cuenta en Delfín Check-in está lista',
+        default: 'Tu acceso ya está activo',
       },
       bodyLead: {
         waitlist_launch:
-          'Hemos activado tu acceso en <strong>admin.delfincheckin.com</strong>. Pulsa el botón y sigue el asistente: primero crearás tu <strong>contraseña</strong> y después completarás los datos de tu alojamiento. Puedes empezar con el <strong>plan gratuito (1 propiedad)</strong> o contratar un plan de pago cuando quieras.',
+          'Pulsa el botón, elige tu <strong>contraseña</strong> y crea tu <strong>primera unidad</strong> (1 minuto). Luego copia el enlace del huésped y listo el check-in en el móvil. Plan gratis sin tarjeta; si quieres envío automático a SES Hospedajes, Plan Check-in desde ~2€/mes.',
         web_plan_paid:
-          'Gracias por contratar Delfín Check-in. Tu suscripción ya está activa (gestión segura en la web con Polar). Abre el enlace, define tu <strong>contraseña</strong> si aún no lo hiciste y termina el asistente: datos del negocio, unidades, MIR y cobros.',
+          'Gracias por contratar Delfín Check-in. Tu suscripción ya está activa (gestión segura en la web con Polar). Abre el enlace, define tu <strong>contraseña</strong> si aún no lo hiciste y termina: unidad, MIR y cobros.',
         default:
-          'Tu cuenta ya está creada. El asistente del panel te guía en <strong>6 pasos</strong> (móvil u ordenador): contraseña, datos del alojamiento, plan, credenciales MIR, primera propiedad y cobros opcionales. Pulsa el botón para continuar:',
+          'Pulsa el botón, elige tu <strong>contraseña</strong> y crea tu <strong>primera unidad</strong> (1 minuto). Luego copia el enlace del huésped. Plan gratis sin tarjeta; Plan Check-in (~2€/mes) si quieres envío automático a SES Hospedajes.',
       },
-      cta: 'Comenzar onboarding',
+      cta: 'Entrar ahora · gratis',
       importantTitle: 'Importante:',
       importantBody:
         'si no ves este correo en la bandeja de entrada, revisa <strong>Spam</strong> o <strong>Promociones</strong> y márcalo como correo deseado.',
@@ -136,18 +137,16 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
       text: {
         waitlist_launch: (url: string, pwd?: string) =>
           [
-            '🐬 Delfín Check-in — tu cuenta está lista',
+            'Delfín Check-in — tu cuenta está lista',
             '',
-            'Gracias por registrarte en delfincheckin.com. Tu acceso en producción ya está activo.',
+            'Entra en 1 minuto: 1) contraseña  2) primera unidad + enlace del huésped.',
             '',
-            'Pasos del asistente: 1) Contraseña  2) Datos del negocio  3) Plan  4) MIR (opcional)  5) Primera propiedad  6) Cobros',
-            '',
-            'Enlace al panel (móvil u ordenador):',
+            'Enlace (móvil u ordenador):',
             url,
             '',
-            pwd ? `Contraseña temporal (paso 1): ${pwd}` : '',
-            'El panel web está adaptado al móvil. Las apps nativas para tiendas están en revisión.',
+            pwd ? `Contraseña temporal: ${pwd}` : '',
             '',
+            'Gratis sin tarjeta. Plan Check-in (~2€/mes) = envío automático a SES Hospedajes.',
             'Si no ves el correo, revisa Spam o Promociones.',
             '',
             `© ${new Date().getFullYear()} Delfín Check-in`,
@@ -160,7 +159,7 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
             '',
             'Tu pago se ha confirmado. Termina la configuración en el panel:',
             '',
-            'Pasos: contraseña → datos del negocio → plan (ya activo) → MIR → propiedad → cobros',
+            'Pasos: contraseña → unidad → MIR → cobros',
             '',
             url,
             '',
@@ -175,15 +174,15 @@ function onboardingEmailCopy(locale: EmailLocale, variant: OnboardingEmailVarian
             .join('\n'),
         default: (url: string, pwd?: string) =>
           [
-            '🐬 Bienvenido a Delfín Check-in',
+            'Delfín Check-in — tu cuenta está lista',
             '',
-            'Tu cuenta ha sido creada exitosamente. Para completar tu configuración inicial, visita:',
+            'Entra en 1 minuto: 1) contraseña  2) primera unidad + enlace del huésped.',
             '',
             url,
             '',
             pwd ? `Contraseña temporal: ${pwd}` : '',
             '',
-            'Si tienes problemas, revisa tu carpeta de Spam/Correo no deseado.',
+            'Si no ves el correo, revisa Spam o Promociones.',
             '',
             `© ${new Date().getFullYear()} Delfín Check-in`,
           ]
@@ -887,13 +886,13 @@ export async function sendOnboardingEmail(params: {
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#eff6ff;border-left:4px solid #2563eb;border-radius:4px;">
                 <tr>
                   <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#1e3a8a;">
-                    <strong>${emailLocale === 'es' ? 'Pasos del asistente' : emailLocale === 'en' ? 'Setup wizard' : 'Onboarding'}:</strong><br/>
+                    <strong>${emailLocale === 'es' ? 'Solo 2 pasos' : emailLocale === 'en' ? 'Just 2 steps' : '2 passi'}:</strong><br/>
                     ${ONBOARDING_STEPS_HTML[emailLocale]}<br/><br/>
                     ${emailLocale === 'es'
-                      ? 'El panel en <strong>admin.delfincheckin.com</strong> está optimizado para <strong>móvil y ordenador</strong>. Las apps nativas para tiendas están en revisión; puedes gestionar todo desde el navegador.'
+                      ? 'Funciona en <strong>móvil y ordenador</strong> en <strong>admin.delfincheckin.com</strong>. Entra ahora y termina: así activas el check-in del huésped.'
                       : emailLocale === 'en'
-                        ? 'The dashboard at <strong>admin.delfincheckin.com</strong> works on <strong>mobile and desktop</strong>. Native store apps are under review; manage everything in your browser.'
-                        : 'Use the web dashboard on <strong>admin.delfincheckin.com</strong> (mobile-friendly).'}
+                        ? 'Works on <strong>mobile and desktop</strong> at <strong>admin.delfincheckin.com</strong>. Finish setup now to activate guest check-in.'
+                        : 'Usa <strong>admin.delfincheckin.com</strong> (móvil y escritorio).'}
                   </td>
                 </tr>
               </table>
