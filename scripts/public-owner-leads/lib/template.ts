@@ -6,7 +6,8 @@
  * Buenas prácticas (Reply / SendIQ 2025):
  * - No decir de dónde salió el email ni “listas” (quema confianza).
  * - Valor + resultado, 1 solo CTA grande, corto y escaneable.
- * - Parte MIR obligatorio + más valor (limpieza, reservas directas, menos comisiones OTA).
+ * - SES Hospedajes obligatorio + más valor (limpieza, reservas directas, menos comisiones OTA).
+ * - Lenguaje de cliente: «registro / pruébalo gratis», nunca «onboarding».
  */
 
 export type ColdEmailAudience = 'owner' | 'agency' | 'hotel';
@@ -103,35 +104,37 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
   const videoThumb =
     process.env.OUTREACH_INTRO_VIDEO_THUMB?.trim() || OUTREACH_INTRO_VIDEO_THUMB;
 
-  // Asunto: beneficio + gratis sin tarjeta (apertura + conversión)
+  // Asunto: claro, acción + gratis (sin jerga “onboarding”)
   const subject = isAgency
-    ? `Parte MIR multi-vivienda — regístrate gratis (sin tarjeta)`
+    ? `Registraos en 1 minuto y probadlo gratis — check-in en el móvil`
     : isHotel
-      ? `Parte MIR por habitación — regístrate gratis (sin tarjeta)`
-      : `Parte de viajeros MIR — regístrate gratis, sin tarjeta`;
+      ? `Registraos en 1 minuto y probadlo gratis — check-in en el móvil`
+      : `Regístrate en 1 minuto y pruébalo gratis — check-in en el móvil`;
 
   const preheader = isAgency
-    ? 'Gratis sin tarjeta. Parte MIR + limpiezas + reservas directas. 1 clic.'
+    ? 'Sin tarjeta. En un minuto creáis la cuenta en Delfín Check-in y tenéis el enlace del huésped.'
     : isHotel
-      ? 'Gratis sin tarjeta. Cumple el RD 933/2021 y simplifica el hotel. 1 clic.'
-      : 'Gratis sin tarjeta. Parte MIR + limpiezas + reservas directas (menos comisiones).';
+      ? 'Sin tarjeta. En un minuto registráis el hotel y tenéis el enlace del huésped.'
+      : 'Sin tarjeta. En un minuto te registras en Delfín Check-in y pruebas el check-in gratis.';
 
   // Hook + valor (sin “encontré tu email”)
   const pitchBody = isAgency
-    ? `Si gestionáis viviendas turísticas, el parte de viajeros al MIR / SES Hospedajes es obligatorio. Con Delfín Check-in el huésped rellena, vosotros revisáis y enviáis — también desde el móvil. Y no os quedáis solo en el parte: calendarios de limpieza, reservas directas (menos dependencia de Airbnb/Booking y sus comisiones) y un panel pensado para portfolio. Para gestoras con volumen: trato prioritario.`
+    ? `Si gestionáis viviendas turísticas, el parte de viajeros a SES Hospedajes es obligatorio. Con Delfín Check-in el huésped rellena en el móvil, vosotros revisáis y enviáis. En el plan gratis el envío es manual; con Plan Check-in (~2€/mes) es automático. También: limpiezas, reservas directas (menos comisiones Airbnb/Booking) y panel multi-vivienda.`
     : isHotel
-      ? `En hoteles y hostales el RD 933/2021 también exige registrar viajeros y enviar el parte al MIR. Con Delfín Check-in lo hacéis por habitación/estancia, fácil en móvil. Además: organización del día a día (limpieza, estancias) y canal de reservas directas para no depender solo de las OTAs.`
-      : `Si tienes un alquiler vacacional en España, el RD 933/2021 te obliga a enviar el parte de viajeros al MIR / SES Hospedajes. Con Delfín Check-in el huésped rellena el parte, tú lo revisas y lo envías al Ministerio — en un minutito, también desde el móvil.
+      ? `En hoteles y hostales el RD 933/2021 exige registrar viajeros en SES Hospedajes. Con Delfín Check-in el huésped hace el check-in en el móvil. Gratis: envío manual del parte + panel y extras. Plan Check-in (~2€/mes): envío automático. Además limpiezas y reservas directas.`
+      : `Si tienes un alquiler vacacional en España, debes enviar el parte de viajeros a SES Hospedajes. Con Delfín Check-in el huésped rellena en el móvil — ahorras tiempo en cada llegada.
 
-Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del anfitrión: calendario de limpiezas, reservas directas (para reducir comisiones de Airbnb y Booking) y todo el día a día del alojamiento en un solo sitio.`;
+Gratis (sin tarjeta): formulario, panel, limpiezas y envío manual a SES Hospedajes. Plan Check-in (~2€/mes): envío automático. Cuando crezcas, reservas directas y reputación Google están en planes superiores.`;
 
   const trialLine = isAgency
-    ? `Empezad gratis, sin tarjeta. En un clic estáis dentro. Cuando queráis el envío automático del parte de viajeros al MIR, el Plan Check-in es 2€/mes + 2€ por propiedad adicional — claro, sin sorpresas.`
+    ? `Cread la cuenta en 1 minuto (gratis, sin tarjeta): elegís el tipo de alojamiento, creáis la primera unidad y ya tenéis el enlace del huésped. Lo demás lo podéis completar después, con calma.`
     : isHotel
-      ? `Empezad gratis, sin tarjeta. En un clic estáis dentro. El Plan Check-in (envío automático MIR) es 2€/mes + 2€ por propiedad adicional.`
-      : `Regístrate gratis (1 propiedad), sin tarjeta. Un clic y en un minutito estás dentro. Si más adelante quieres el envío automático del parte de viajeros, el Plan Check-in cuesta 2€/mes + 2€ por cada propiedad adicional; si no, te quedas en gratis o te das de baja.`;
+      ? `Registraos en 1 minuto (gratis, sin tarjeta): habitación + enlace del huésped listos. Si queréis envío automático a SES Hospedajes, Plan Check-in desde 2€/mes.`
+      : `Regístrate en Delfín Check-in en 1 minuto y pruébalo gratis (sin tarjeta): creas tu unidad y copias el enlace del huésped. Si más adelante quieres envío automático a SES Hospedajes, Plan Check-in desde 2€/mes.`;
 
-  const ctaLabel = 'Regístrate gratis — sin tarjeta';
+  const ctaLabel = isAgency || isHotel
+    ? 'Crear cuenta gratis · 1 minuto'
+    : 'Regístrate gratis · 1 minuto';
 
   const socialText = [
     'Síguenos:',
@@ -170,7 +173,7 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
     ``,
     trialLine,
     ``,
-    `Regístrate gratis (sin tarjeta):`,
+    `Regístrate en 1 minuto (gratis, sin tarjeta):`,
     signup,
     ``,
     socialText,
@@ -222,7 +225,7 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
           <tr>
             <td align="left" style="background-color:#0284c7;padding:26px 28px;">
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:24px;line-height:1.2;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">Delfín Check-in</p>
-              <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.4;color:#e0f2fe;">Parte de viajeros MIR · limpiezas · reservas directas</p>
+              <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.4;color:#e0f2fe;">Parte SES Hospedajes · limpiezas · reservas directas</p>
             </td>
           </tr>
 
@@ -230,7 +233,7 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
           <tr>
             <td align="center" style="background-color:#f0f9ff;padding:14px 20px;border-bottom:1px solid #e0f2fe;">
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#0369a1;letter-spacing:0.02em;">
-                GRATIS &nbsp;·&nbsp; SIN TARJETA &nbsp;·&nbsp; 1 CLIC &nbsp;·&nbsp; ESPAÑA
+                GRATIS &nbsp;·&nbsp; SIN TARJETA &nbsp;·&nbsp; 1 MINUTO &nbsp;·&nbsp; ESPAÑA
               </p>
             </td>
           </tr>
@@ -263,7 +266,7 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                       <tr>
                         <td style="padding:8px 0;border-bottom:1px solid #e0f2fe;">
-                          <span style="color:#0284c7;font-weight:700;">&#10003;</span>&nbsp; Parte de viajeros al MIR (obligatorio)
+                          <span style="color:#0284c7;font-weight:700;">&#10003;</span>&nbsp; Parte de viajeros a SES Hospedajes (obligatorio)
                         </td>
                       </tr>
                       <tr>
@@ -325,10 +328,10 @@ Y aquí está la diferencia: no es “solo un parte”. Es la herramienta del an
                 </tr>
               </table>
               <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#0369a1;font-weight:700;">
-                Empieza gratis hoy · sin tarjeta · sin compromiso
+                Registro en 1 minuto · gratis · sin tarjeta · sin compromiso
               </p>
               <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45;color:#64748b;">
-                Plan Check-in (envío automático MIR): 2€/mes + 2€/propiedad adicional
+                Plan Check-in (envío automático a SES Hospedajes): 2€/mes + 2€/propiedad adicional
               </p>
               <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.4;color:#94a3b8;">
                 Si el botón no funciona: <a href="${escapeAttr(signup)}" style="color:#0284c7;word-break:break-all;">abrir enlace</a>

@@ -60,8 +60,8 @@ export async function sendTrackedOutreachLead(lead: {
   const signupRaw = signupUrlForLead(email);
   const subjectPreview =
     audience === 'agency'
-      ? `${lead.domain || 'gestora'}: parte MIR multi-vivienda — prueba gratis`
-      : `${lead.domain || 'tu alojamiento'}: parte de viajeros MIR con prueba gratis`;
+      ? `${lead.domain || 'gestora'}: registro en 1 minuto — prueba gratis`
+      : `${lead.domain || 'tu alojamiento'}: regístrate en 1 minuto y pruébalo gratis`;
 
   let trackingId = '';
   try {

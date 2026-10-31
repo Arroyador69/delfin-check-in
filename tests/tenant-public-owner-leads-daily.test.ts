@@ -69,8 +69,8 @@ describe('public-owner-leads daily campaign', () => {
       optOutUrl: 'https://admin.delfincheckin.com/es/baja-outreach?e=x&s=y',
       signupUrl: 'https://delfincheckin.com/?utm_campaign=public_owner_leads_es',
     });
-    expect(mail.subject.toLowerCase()).toMatch(/ahorra tiempo|llegada/);
-    expect(mail.html).toMatch(/Empezar gratis|2 pasos/i);
+    expect(mail.subject.toLowerCase()).toMatch(/reg[ií]strate|minuto|gratis/);
+    expect(mail.html).toMatch(/Reg[ií]strate gratis|1 minuto|Crear cuenta gratis/i);
     expect(mail.html).toMatch(/sin tarjeta/i);
     expect(mail.html).toContain('Síguenos');
     expect(mail.html).toContain('Instagram');
