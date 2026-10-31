@@ -143,7 +143,7 @@ export async function updateEmailTracking(params: {
         RETURNING id
       `
       if (!updated.rows.length) {
-        console.warn('[email-tracking] open: id no encontrado', emailId)
+        // Pixel abierto con tid inexistente (bots / preview) — ignorar en silencio.
         return
       }
       await syncPublicOwnerLeadEngagement(emailId)
@@ -163,7 +163,7 @@ export async function updateEmailTracking(params: {
         RETURNING id
       `
       if (!updated.rows.length) {
-        console.warn('[email-tracking] click: id no encontrado', emailId)
+        // Prefetch / Safe Links / bots con tid caducado — no es incidencia operativa.
         return
       }
       await syncPublicOwnerLeadEngagement(emailId)
