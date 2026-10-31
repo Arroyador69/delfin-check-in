@@ -270,8 +270,47 @@ export async function middleware(req: NextRequest) {
   // 1. ARCHIVOS ESTÁTICOS - SIEMPRE PERMITIR
   // ==============================================
   
-  // Preflight CORS
-  if (req.method === 'OPTIONS') return NextResponse.next();
+  // Staging público (F-008): exigir Basic Auth si STAGING_BASIC_AUTH está definido (user:pass).
+  const hostHeader = (req.headers.get('host') || '').toLowerCase();
+  if (hostHeader.startsWith('staging.') && process.env.STAGING_BASIC_AUTH?.includes(':')) {
+    const expected = process.env.STAGING_BASIC_AUTH.trim();
+    const auth = req.headers.get('authorization') || '';
+    let provided = '';
+    if (auth.startsWith('Basic ')) {
+      try {
+        provided = atob(auth.slice(6));
+      } catch {
+        provided = '';
+      }
+    }
+    if (provided !== expected) {
+      return new NextResponse('Authentication required', {
+        status: 401,
+        headers: {
+          'WWW-Authenticate': 'Basic realm="Delfin staging"',
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+  }
+
+  // Preflight CORS: no abrir en blanco toda la API (F-003). Solo rutas públicas conocidas.
+  if (req.method === 'OPTIONS') {
+    const isPublicCorsPath =
+      pathname.startsWith('/api/public/') ||
+      pathname.startsWith('/api/registro-flex') ||
+      pathname.startsWith('/api/payment-links/');
+    if (!isPublicCorsPath) {
+      return new NextResponse(null, {
+        status: 204,
+        headers: {
+          Allow: 'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS',
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+    return NextResponse.next();
+  }
 
   // Producción: no exponer endpoints de test/debug/check-db (activar con DELFIN_ALLOW_DEBUG_ROUTES=true si hace falta)
   if (
@@ -283,11 +322,38 @@ export async function middleware(req: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  // Rate limit global para /api (admin web + app móvil + público). Por IP; almacenamiento en memoria
-  // (por instancia). Excluye webhooks y cron — ver isGlobalApiRateLimitExempt.
+  // Rate limit estricto en auth (F-001 / F-007) + global API.
   if (pathname.startsWith('/api/')) {
+    const ip = getClientIP(req.headers);
+    const isAuthHotPath =
+      pathname.startsWith('/api/admin/login') ||
+      pathname.startsWith('/api/auth/forgot-password') ||
+      pathname.startsWith('/api/auth/verify-recovery-code') ||
+      pathname.startsWith('/api/auth/reset-password') ||
+      pathname.startsWith('/api/auth/mobile-login');
+
+    if (isAuthHotPath && req.method === 'POST') {
+      const rlAuth = checkRateLimit(`auth-hot:${ip}`, RATE_LIMIT_CONFIGS.login);
+      if (!rlAuth.allowed) {
+        return NextResponse.json(
+          {
+            error: 'Too many requests',
+            message: 'Demasiados intentos. Espera e inténtalo de nuevo.',
+            retryAfter: rlAuth.retryAfter,
+          },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': String(rlAuth.retryAfter ?? 60),
+              'X-RateLimit-Limit': String(RATE_LIMIT_CONFIGS.login.maxAttempts),
+              'X-RateLimit-Remaining': String(rlAuth.remaining),
+            },
+          }
+        );
+      }
+    }
+
     if (!isGlobalApiRateLimitExempt(pathname)) {
-      const ip = getClientIP(req.headers);
       const rl = checkRateLimit(`global-api:${ip}`, RATE_LIMIT_CONFIGS.api);
       if (!rl.allowed) {
         return NextResponse.json(

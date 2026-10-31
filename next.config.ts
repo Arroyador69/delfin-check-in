@@ -64,8 +64,26 @@ const nextConfig: NextConfig = {
       },
     ]);
   },
-  // Cabeceras de seguridad (complementan nginx en Docker / proxy en Vercel)
+  // Cabeceras de seguridad (pentest Penligent 2026-09: F-005 CSP/HSTS)
   async headers() {
+    // CSP pragmática para Next.js + Stripe/Polar/Sentry/YouTube embeds.
+    // frame-ancestors refuerza clickjacking junto a X-Frame-Options.
+    const csp = [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'self'",
+      "form-action 'self' https://admin.delfincheckin.com https://polar.sh https://checkout.polar.sh",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data: https:",
+      "style-src 'self' 'unsafe-inline' https:",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.sentry-cdn.com https://www.youtube.com https://www.googletagmanager.com",
+      "connect-src 'self' https: wss:",
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://polar.sh https://checkout.polar.sh https://www.youtube.com https://www.youtube-nocookie.com",
+      "worker-src 'self' blob:",
+      "upgrade-insecure-requests",
+    ].join('; ');
+
     const security = [
       { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
       { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -74,6 +92,12 @@ const nextConfig: NextConfig = {
         key: 'Permissions-Policy',
         value: 'camera=(), microphone=(), geolocation=(self)',
       },
+      {
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload',
+      },
+      { key: 'Content-Security-Policy', value: csp },
+      { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
     ];
     return [
       {

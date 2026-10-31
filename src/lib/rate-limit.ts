@@ -30,13 +30,14 @@ const rateLimitStore = new Map<string, RateLimitEntry>();
 
 // Configuraciones predefinidas
 export const RATE_LIMIT_CONFIGS = {
+  /** Login / recuperación: más estricto (pentest F-001 / F-007). */
   login: {
     maxAttempts: 5,
     windowMs: 15 * 60 * 1000, // 15 minutos
-    blockDurationMs: 30 * 60 * 1000 // 30 minutos de bloqueo
+    blockDurationMs: 45 * 60 * 1000 // 45 minutos de bloqueo
   },
   api: {
-    maxAttempts: 100,
+    maxAttempts: 80,
     windowMs: 60 * 1000, // 1 minuto
     blockDurationMs: 5 * 60 * 1000 // 5 minutos de bloqueo
   },
