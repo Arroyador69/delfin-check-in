@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { checkRateLimit, getClientIP, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
-
-// CORS headers para permitir peticiones desde el formulario público
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers':
-    'Content-Type, Authorization, X-Tenant-ID, X-Tenant-Name, X-Client-Submission-Id, Idempotency-Key',
-};
+import { publicCorsHeaders } from '@/lib/cors-allowlist';
 
 /** Reenvía el cuerpo de error tal cual (JSON) para que el formulario pueda leer `issues`, `message`, etc. */
 async function forwardUpstreamError(
   upstream: Response,
-  cors: typeof corsHeaders
+  cors: Record<string, string>
 ): Promise<NextResponse> {
   const errorText = await upstream.text();
   try {
@@ -34,7 +27,7 @@ async function forwardUpstreamError(
  * Manejar preflight OPTIONS request
  */
 export async function OPTIONS(req: NextRequest) {
-  return NextResponse.json({}, { status: 200, headers: corsHeaders });
+  return NextResponse.json({}, { status: 200, headers: publicCorsHeaders(req.headers.get('origin')) });
 }
 
 /**
@@ -45,6 +38,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const corsHeaders = publicCorsHeaders(req.headers.get('origin'));
   try {
     const { slug } = await params;
     const roomId = req.nextUrl.searchParams.get('room_id')?.trim() || '';

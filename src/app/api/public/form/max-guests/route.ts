@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveMaxGuestsForTravelerForm } from '@/lib/form-max-guests';
+import { publicCorsHeaders } from '@/lib/cors-allowlist';
 
 const TENANT_ID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 200, headers: corsHeaders });
+export async function OPTIONS(req: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: publicCorsHeaders(req.headers.get('origin')),
+  });
 }
 
 /**
@@ -19,6 +17,7 @@ export async function OPTIONS() {
  * GET ?tenant_id=&room_id=&property_id=
  */
 export async function GET(req: NextRequest) {
+  const corsHeaders = publicCorsHeaders(req.headers.get('origin'));
   try {
     const tenantId = req.nextUrl.searchParams.get('tenant_id')?.trim() || '';
     const roomId = req.nextUrl.searchParams.get('room_id')?.trim() || '';
@@ -38,9 +37,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ max_guests: maxGuests }, { headers: corsHeaders });
   } catch (error) {
-    console.error('Error en /api/public/form/max-guests:', error);
+    console.error('[max-guests]', error);
     return NextResponse.json(
-      { error: 'Error interno', max_guests: 2 },
+      { error: 'Error interno' },
       { status: 500, headers: corsHeaders }
     );
   }
