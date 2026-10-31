@@ -12,6 +12,7 @@ import {
   onboardingEmailVariantForOwner,
 } from '@/lib/onboarding-magic-link';
 import { liftFalseSmtpBounceSuppression } from '@/lib/email-suppression';
+import { isSyntheticTestEmail } from '@/lib/synthetic-test-email';
 
 export async function retryFailedOnboardingEmails(opts?: {
   dryRun?: boolean;
@@ -77,6 +78,10 @@ export async function retryFailedOnboardingEmails(opts?: {
       .trim()
       .toLowerCase();
     if (!email.includes('@')) {
+      skipped++;
+      continue;
+    }
+    if (isSyntheticTestEmail(email)) {
       skipped++;
       continue;
     }

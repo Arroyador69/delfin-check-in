@@ -809,6 +809,15 @@ export async function sendOnboardingEmail(params: {
 }) {
   let trackingId: string | null = null;
   try {
+    const { isSyntheticTestEmail } = await import('@/lib/synthetic-test-email');
+    if (isSyntheticTestEmail(params.to)) {
+      console.warn(
+        '⚠️ [SEND ONBOARDING EMAIL] Skip synthetic test mailbox (evita 550 Invalid recipients):',
+        params.to
+      );
+      return { success: true, skipped: 'synthetic_test_email' as const };
+    }
+
     const {
       isEmailBlockedForTransactional,
       liftFalseSmtpBounceSuppression,
