@@ -924,7 +924,7 @@ export async function sendOnboardingEmail(params: {
             'onboarding',
             ${params.to},
             ${subject},
-            'sent',
+            'pending',
             ${JSON.stringify({ variant, cta_direct: true })}::jsonb
           )
           RETURNING id
@@ -1048,7 +1048,8 @@ export async function sendOnboardingEmail(params: {
       },
     };
 
-    // Reintentos ante rate-limit Zoho / temporales (mismo buzón que outreach)
+    // Reintentos ante rate-limit Zoho / temporales (mismo buzón que outreach).
+    // Solo avisamos en el último intento fallido: los avisos intermedios saturaban el panel.
     let result: Awaited<ReturnType<typeof transporter.sendMail>> | null = null;
     let lastSendErr: unknown = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
@@ -1059,10 +1060,12 @@ export async function sendOnboardingEmail(params: {
       } catch (sendErr) {
         lastSendErr = sendErr;
         const retryable = isSmtpTransientOrRateLimitError(sendErr);
-        console.warn(`⚠️ [SEND ONBOARDING EMAIL] intento ${attempt}/3 falló:`, {
-          retryable,
-          message: sendErr instanceof Error ? sendErr.message : String(sendErr),
-        });
+        if (!retryable || attempt === 3) {
+          console.warn(`⚠️ [SEND ONBOARDING EMAIL] intento ${attempt}/3 falló:`, {
+            retryable,
+            message: sendErr instanceof Error ? sendErr.message : String(sendErr),
+          });
+        }
         if (!retryable || attempt === 3) break;
         await new Promise((r) => setTimeout(r, 2500 * attempt));
       }

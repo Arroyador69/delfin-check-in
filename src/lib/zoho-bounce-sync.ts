@@ -100,7 +100,12 @@ async function resolveAccountId(accessToken: string): Promise<string | null> {
     headers: zohoAuthHeaders(accessToken),
   });
   if (!res.ok) {
-    console.error('[zoho-bounce-sync] list accounts failed', res.status);
+    // Sin ZOHO_ACCOUNT_ID o token sin scope mail: aviso suave (no error de producto).
+    console.warn(
+      '[zoho-bounce-sync] list accounts failed',
+      res.status,
+      '— define ZOHO_ACCOUNT_ID o revisa OAuth Mail'
+    );
     return null;
   }
   const data = (await res.json()) as {
