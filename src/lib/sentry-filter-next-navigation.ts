@@ -89,6 +89,23 @@ export function isBrowserExtensionNoise(error: unknown): boolean {
 }
 
 /**
+ * Ruido de crawlers CEFSharp / Outlook Safe Links al escanear URLs del mail
+ * (p. ej. magic link de onboarding). No es un bug de la app.
+ * @see https://trackjs.com/javascript-errors/object-not-found-matching-id-methodname-paramcount/
+ */
+export function isCefSharpOutlookNoise(error: unknown): boolean {
+  if (error == null) return false;
+  const blob = `${errorName(error)} ${errorMessage(error)} ${errorStack(error)}`;
+  return (
+    /Object Not Found Matching Id:\s*\d+/i.test(blob) ||
+    (/MethodName:\s*update/i.test(blob) && /ParamCount:\s*\d+/i.test(blob)) ||
+    /Non-Error promise rejection captured with value:\s*Object Not Found Matching Id/i.test(
+      blob
+    )
+  );
+}
+
+/**
  * Sentry sintetiza "Object captured as promise rejection with keys: [object has no keys]"
  * cuando alguien hace Promise.reject({}). Suele ser ruido de router/extensiones.
  */
@@ -167,6 +184,7 @@ export function shouldDropSentryEvent(
     isNextJsNavigationControlError(error) ||
     isBenignNetworkOrAbortError(error) ||
     isBrowserExtensionNoise(error) ||
+    isCefSharpOutlookNoise(error) ||
     isEmptyObjectRejection(error)
   ) {
     return true;
@@ -178,7 +196,9 @@ export function shouldDropSentryEvent(
   if (
     isEmptyObjectRejection({ message: blob }) ||
     isBrowserExtensionNoise({ message: blob }) ||
-    /Object captured as promise rejection with keys:\s*\[object has no keys\]/i.test(blob)
+    isCefSharpOutlookNoise({ message: blob }) ||
+    /Object captured as promise rejection with keys:\s*\[object has no keys\]/i.test(blob) ||
+    /Object Not Found Matching Id:\s*\d+/i.test(blob)
   ) {
     return true;
   }
@@ -190,6 +210,7 @@ export function shouldDropSentryEvent(
     };
     if (
       isBrowserExtensionNoise(synthetic) ||
+      isCefSharpOutlookNoise(synthetic) ||
       isEmptyObjectRejection(synthetic) ||
       isBenignNetworkOrAbortError(synthetic)
     ) {
