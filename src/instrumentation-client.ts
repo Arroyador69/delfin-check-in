@@ -33,6 +33,10 @@ Sentry.init({
     'MetaMask extension not found',
     /MetaMask/i,
     /Object captured as promise rejection with keys:\s*\[object has no keys\]/i,
+    // Outlook Safe Links / CEFSharp al escanear magic links del mail (no es bug app)
+    /Object Not Found Matching Id:\s*\d+/i,
+    /MethodName:\s*update,\s*ParamCount:\s*\d+/i,
+    /Non-Error promise rejection captured with value:\s*Object Not Found Matching Id/i,
   ],
 
   // Scripts de extensiones (wallets, etc.)
