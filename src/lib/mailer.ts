@@ -839,11 +839,17 @@ export async function sendOnboardingEmail(params: {
       return { success: false, error: 'email_suppressed' };
     }
 
-    // Validar que SMTP esté configurado antes de intentar enviar
-    const transporter = getTransport();
-    
+    // Preferir Resend (evita 550 Zoho Unusual sending). SMTP solo fallback.
     // Email específico para onboarding de propietarios (admin)
-    const from = process.env.SMTP_FROM_ONBOARDING || process.env.SMTP_FROM || `Delfín Check-in <noreply@delfincheckin.com>`;
+    const from =
+      process.env.SMTP_FROM_ONBOARDING ||
+      process.env.RESEND_FROM ||
+      process.env.SMTP_FROM ||
+      `Delfín Check-in <noreply@delfincheckin.com>`;
+    const preferResend =
+      String(process.env.ONBOARDING_MAIL_PROVIDER || '')
+        .trim()
+        .toLowerCase() !== 'smtp' && Boolean(process.env.RESEND_API_KEY?.trim());
 
     const variant = normalizeOnboardingVariant(params.variant);
     const emailLocale = normalizeEmailLocale(params.locale || guessLocaleFromOnboardingUrl(params.onboardingUrl));
@@ -1030,6 +1036,7 @@ export async function sendOnboardingEmail(params: {
       from,
       hasOnboardingUrl: !!params.onboardingUrl,
       onboardingUrlPrefix: params.onboardingUrl.substring(0, 50) + '...',
+      provider: preferResend ? 'resend' : 'smtp',
       smtpHost: process.env.SMTP_HOST,
       smtpUser: process.env.SMTP_USER,
       smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && (process.env.SMTP_PASS || process.env.SMTP_PASSWORD))
@@ -1048,39 +1055,79 @@ export async function sendOnboardingEmail(params: {
       },
     };
 
-    // Reintentos ante rate-limit Zoho / temporales (mismo buzón que outreach).
-    // Solo avisamos en el último intento fallido: los avisos intermedios saturaban el panel.
-    let result: Awaited<ReturnType<typeof transporter.sendMail>> | null = null;
-    let lastSendErr: unknown = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        result = await transporter.sendMail(mailPayload);
-        lastSendErr = null;
-        break;
-      } catch (sendErr) {
-        lastSendErr = sendErr;
-        const retryable = isSmtpTransientOrRateLimitError(sendErr);
-        if (!retryable || attempt === 3) {
-          console.warn(`⚠️ [SEND ONBOARDING EMAIL] intento ${attempt}/3 falló:`, {
-            retryable,
-            message: sendErr instanceof Error ? sendErr.message : String(sendErr),
-          });
-        }
-        if (!retryable || attempt === 3) break;
-        await new Promise((r) => setTimeout(r, 2500 * attempt));
+    let messageId: string | undefined;
+    let accepted: unknown = undefined;
+    let rejected: unknown = undefined;
+
+    if (preferResend) {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from,
+          to: [params.to],
+          subject,
+          html,
+          text,
+          tags: [{ name: 'type', value: 'onboarding' }],
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        id?: string;
+        message?: string;
+        name?: string;
+      };
+      if (!res.ok) {
+        const msg = body.message || body.name || `Resend HTTP ${res.status}`;
+        const err = new Error(msg) as Error & { retryable?: boolean };
+        err.retryable = res.status === 429 || res.status >= 500;
+        throw err;
       }
-    }
-    if (!result) {
-      throw lastSendErr instanceof Error
-        ? lastSendErr
-        : new Error(String(lastSendErr || 'send_failed'));
+      messageId = body.id;
+      accepted = [params.to];
+    } else {
+      const transporter = getTransport();
+      // Reintentos ante rate-limit Zoho / temporales.
+      // Solo avisamos en el último intento fallido: los avisos intermedios saturaban el panel.
+      let result: Awaited<ReturnType<typeof transporter.sendMail>> | null = null;
+      let lastSendErr: unknown = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          result = await transporter.sendMail(mailPayload);
+          lastSendErr = null;
+          break;
+        } catch (sendErr) {
+          lastSendErr = sendErr;
+          const retryable = isSmtpTransientOrRateLimitError(sendErr);
+          if (!retryable || attempt === 3) {
+            console.warn(`⚠️ [SEND ONBOARDING EMAIL] intento ${attempt}/3 falló:`, {
+              retryable,
+              message: sendErr instanceof Error ? sendErr.message : String(sendErr),
+            });
+          }
+          if (!retryable || attempt === 3) break;
+          await new Promise((r) => setTimeout(r, 2500 * attempt));
+        }
+      }
+      if (!result) {
+        throw lastSendErr instanceof Error
+          ? lastSendErr
+          : new Error(String(lastSendErr || 'send_failed'));
+      }
+      messageId = result.messageId;
+      accepted = result.accepted;
+      rejected = result.rejected;
     }
 
     console.log('✅ [SEND ONBOARDING EMAIL] Email enviado exitosamente:', {
-      messageId: result.messageId,
+      messageId,
       to: params.to,
-      accepted: result.accepted,
-      rejected: result.rejected
+      provider: preferResend ? 'resend' : 'smtp',
+      accepted,
+      rejected
     });
 
     if (trackingId) {
@@ -1089,7 +1136,10 @@ export async function sendOnboardingEmail(params: {
           UPDATE email_tracking
           SET
             status = 'sent',
-            message_id = ${result.messageId || null},
+            message_id = ${messageId || null},
+            metadata = COALESCE(metadata, '{}'::jsonb) || ${JSON.stringify({
+              provider: preferResend ? 'resend' : 'smtp',
+            })}::jsonb,
             updated_at = NOW()
           WHERE id = ${trackingId}::uuid
         `;
@@ -1098,7 +1148,7 @@ export async function sendOnboardingEmail(params: {
       }
     }
 
-    return { success: true, messageId: result.messageId };
+    return { success: true, messageId };
   } catch (error: any) {
     const { isSmtpTransientOrRateLimitError: isTransient } = await import(
       '@/lib/email-suppression'
