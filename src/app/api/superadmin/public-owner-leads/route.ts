@@ -10,6 +10,7 @@ import {
 import { applyOutreachBouncesFromText } from '@/lib/public-owner-leads/apply-bounces';
 import { isBlockedOutreachHost, normalizeUrl } from '@/lib/public-owner-leads/extract-web';
 import {
+  isPublicOwnerLeadsPaused,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_DAILY_TARGET,
   PUBLIC_OWNER_LEADS_MIN_QUEUED,
@@ -269,8 +270,12 @@ export async function GET(req: NextRequest) {
       onboarding_goal: PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
       onboardings_today: onboardingsToday,
       reserve_ready: reserve,
-      afternoon_will_run: wavesStillRun,
-      waves_still_run: wavesStillRun,
+      afternoon_will_run: wavesStillRun && !isPublicOwnerLeadsPaused(),
+      waves_still_run: wavesStillRun && !isPublicOwnerLeadsPaused(),
+      paused: isPublicOwnerLeadsPaused(),
+      pause_hint: isPublicOwnerLeadsPaused()
+        ? 'Captación PAUSADA — reactivar con PUBLIC_OWNER_LEADS_PAUSED=0 en Vercel tras arreglar Zoho bienvenida'
+        : null,
       schedule_hint:
         '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram 12:00 + 16:00 + cierre 21:00',
       outreach_provider: getOutreachProviderInfo(),
@@ -327,6 +332,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'run_daily') {
+      if (isPublicOwnerLeadsPaused() && !body.force) {
+        return NextResponse.json({
+          ok: false,
+          paused: true,
+          error:
+            'Captación pausada. Pasa force:true solo si quieres enviar igual, o PUBLIC_OWNER_LEADS_PAUSED=0 en Vercel.',
+        });
+      }
       const dryRun = Boolean(body.dryRun);
       const result = await runDailyPublicOwnerLeads({
         dryRun,
