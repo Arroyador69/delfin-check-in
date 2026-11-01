@@ -11,8 +11,11 @@ import { applyOutreachBouncesFromText } from '@/lib/public-owner-leads/apply-bou
 import { isBlockedOutreachHost, normalizeUrl } from '@/lib/public-owner-leads/extract-web';
 import {
   isPublicOwnerLeadsPaused,
+  PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL,
+  PUBLIC_OWNER_LEADS_COLD_DAILY_CAP,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_DAILY_TARGET,
+  PUBLIC_OWNER_LEADS_FU_DAILY_CAP,
   PUBLIC_OWNER_LEADS_MIN_QUEUED,
   PUBLIC_OWNER_LEADS_PROGRESS_EVERY,
   PUBLIC_OWNER_LEADS_WAVE_MAX,
@@ -23,6 +26,7 @@ import {
 } from '@/lib/public-owner-leads/constants';
 import { syncZohoBounces } from '@/lib/zoho-bounce-sync';
 import { getOutreachProviderInfo } from '@/lib/public-owner-leads/send-smtp';
+import { followUpCounts } from '@/lib/public-owner-leads/select-followups';
 
 async function requireSuperAdmin(req: NextRequest) {
   const authToken = req.cookies.get('auth_token')?.value;
@@ -82,9 +86,45 @@ export async function GET(req: NextRequest) {
     const today = await sql`
       SELECT
         COUNT(*) FILTER (
-          WHERE status = 'sent'
-            AND sent_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid') AT TIME ZONE 'Europe/Madrid'
+          WHERE COALESCE(last_touch_at, sent_at) >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+            AT TIME ZONE 'Europe/Madrid'
+            AND (
+              last_touch_kind IN ('cold', 'fu_click', 'fu_open', 'fu_silent')
+              OR (last_touch_kind IS NULL AND status = 'sent')
+            )
         )::int AS sent_today,
+        COUNT(*) FILTER (
+          WHERE COALESCE(last_touch_at, sent_at) >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+            AT TIME ZONE 'Europe/Madrid'
+            AND (
+              last_touch_kind = 'cold'
+              OR (
+                last_touch_kind IS NULL AND status = 'sent'
+                AND sent_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+                  AT TIME ZONE 'Europe/Madrid'
+              )
+            )
+        )::int AS cold_today,
+        COUNT(*) FILTER (
+          WHERE last_touch_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+            AT TIME ZONE 'Europe/Madrid'
+            AND last_touch_kind IN ('fu_click', 'fu_open', 'fu_silent')
+        )::int AS fu_today,
+        COUNT(*) FILTER (
+          WHERE last_touch_kind = 'fu_click'
+            AND last_touch_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+              AT TIME ZONE 'Europe/Madrid'
+        )::int AS fu_click_today,
+        COUNT(*) FILTER (
+          WHERE last_touch_kind = 'fu_open'
+            AND last_touch_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+              AT TIME ZONE 'Europe/Madrid'
+        )::int AS fu_open_today,
+        COUNT(*) FILTER (
+          WHERE last_touch_kind = 'fu_silent'
+            AND last_touch_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+              AT TIME ZONE 'Europe/Madrid'
+        )::int AS fu_silent_today,
         COUNT(*) FILTER (
           WHERE status = 'bounced'
             AND updated_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid') AT TIME ZONE 'Europe/Madrid'
@@ -255,11 +295,36 @@ export async function GET(req: NextRequest) {
     }
     const wavesStillRun = onboardingsToday < PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL;
 
+    let checkinPaidToday = 0;
+    try {
+      const paid = await sql`
+        SELECT COUNT(*)::int AS n
+        FROM tenants
+        WHERE plan_type IN ('checkin', 'standard', 'pro')
+          AND updated_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+            AT TIME ZONE 'Europe/Madrid'
+      `;
+      checkinPaidToday = Number(paid.rows[0]?.n || 0);
+    } catch {
+      checkinPaidToday = 0;
+    }
+
+    let fu: Awaited<ReturnType<typeof followUpCounts>> | null = null;
+    try {
+      fu = await followUpCounts();
+    } catch {
+      fu = null;
+    }
+
+    const todayRow = (today.rows[0] || {}) as Record<string, number>;
+
     return NextResponse.json({
       ok: true,
       table_ready: true,
       daily_target: PUBLIC_OWNER_LEADS_DAILY_TARGET,
       daily_hard_cap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
+      cold_daily_cap: PUBLIC_OWNER_LEADS_COLD_DAILY_CAP,
+      fu_daily_cap: PUBLIC_OWNER_LEADS_FU_DAILY_CAP,
       afternoon_max: PUBLIC_OWNER_LEADS_WAVE_MAX,
       wave_max: PUBLIC_OWNER_LEADS_WAVE_MAX,
       min_queued: PUBLIC_OWNER_LEADS_MIN_QUEUED,
@@ -268,19 +333,37 @@ export async function GET(req: NextRequest) {
       delay_ms: PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
       signup_goal: PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
       onboarding_goal: PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
+      checkin_paid_goal: PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL,
       onboardings_today: onboardingsToday,
+      checkin_paid_today: checkinPaidToday,
       reserve_ready: reserve,
       afternoon_will_run: wavesStillRun && !isPublicOwnerLeadsPaused(),
       waves_still_run: wavesStillRun && !isPublicOwnerLeadsPaused(),
       paused: isPublicOwnerLeadsPaused(),
       pause_hint: isPublicOwnerLeadsPaused()
-        ? 'Captación PAUSADA — reactivar con PUBLIC_OWNER_LEADS_PAUSED=0 en Vercel tras arreglar Zoho bienvenida'
+        ? 'Captación PAUSADA — PUBLIC_OWNER_LEADS_PAUSED=1'
         : null,
       schedule_hint:
-        '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram 12:00 + 16:00 + cierre 21:00',
+        '08:00–17:30 Madrid · 50/oleada · FU primero (A→B→C) · cold después · Telegram 12:00 + 16:00 + 21:00',
+      system: {
+        model: 'cold+followup',
+        hard_cap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
+        cold_cap: PUBLIC_OWNER_LEADS_COLD_DAILY_CAP,
+        fu_cap: PUBLIC_OWNER_LEADS_FU_DAILY_CAP,
+        priority: 'fu_click → fu_open → fu_silent → cold',
+        goals: {
+          onboardings: PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
+          checkin_paid: PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL,
+        },
+      },
+      followup: fu,
       outreach_provider: getOutreachProviderInfo(),
       stats: { ...st, open_rate_pct: openRate, click_rate_pct: clickRate, signup_rate_pct: signupRate },
-      today: today.rows[0] || {},
+      today: {
+        ...todayRow,
+        cold_today: Number(todayRow.cold_today || 0),
+        fu_today: Number(todayRow.fu_today || 0),
+      },
       by_day: byDay.rows,
       filter: { day: dayFilter || null, status: statusFilter || null },
       sources,

@@ -23,11 +23,13 @@ import {
 } from '../src/lib/public-owner-leads/wave-schedule';
 
 describe('public-owner-leads daily campaign', () => {
-  it('10 oleadas ×50 = tope 500 (350 cold + 150 FU); cola 1000; delay ≥1.5s; meta 20; 3 Telegram/día', () => {
+  it('10 oleadas ×50 = tope 500 (300 cold + 200 FU); cola 1000; delay ≥1.5s; meta 20; 3 Telegram/día', () => {
     expect(PUBLIC_OWNER_LEADS_WAVE_MAX).toBe(50);
     expect(PUBLIC_OWNER_LEADS_DAILY_TARGET).toBe(50);
     expect(PUBLIC_OWNER_LEADS_WAVES_PER_DAY).toBe(10);
     expect(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP).toBe(500);
+    expect(PUBLIC_OWNER_LEADS_COLD_DAILY_CAP).toBe(300);
+    expect(PUBLIC_OWNER_LEADS_FU_DAILY_CAP).toBe(200);
     expect(PUBLIC_OWNER_LEADS_COLD_DAILY_CAP + PUBLIC_OWNER_LEADS_FU_DAILY_CAP).toBe(
       PUBLIC_OWNER_LEADS_DAILY_HARD_CAP
     );

@@ -43,15 +43,16 @@ export const PUBLIC_OWNER_LEADS_DAILY_TARGET = PUBLIC_OWNER_LEADS_WAVE_MAX;
 
 /**
  * Tope total del día (cold + follow-up) = 10 oleadas × 50 = 500.
- * Reparto: cold 350 + FU 150. Cold nunca se reenvía al mismo email.
+ * Reparto: cold 300 (descubrimiento) + FU 200 (conversión Check-in / hoteles).
+ * Cold nunca se reenvía al mismo email.
  */
 export const PUBLIC_OWNER_LEADS_DAILY_HARD_CAP = 500;
 
-/** Tope diario solo cold (primer contacto). */
-export const PUBLIC_OWNER_LEADS_COLD_DAILY_CAP = 350;
+/** Tope diario solo cold (primer contacto / descubrimiento). */
+export const PUBLIC_OWNER_LEADS_COLD_DAILY_CAP = 300;
 
 /** Tope diario solo follow-ups (FU-A click > FU-B open > FU-C silencio). */
-export const PUBLIC_OWNER_LEADS_FU_DAILY_CAP = 150;
+export const PUBLIC_OWNER_LEADS_FU_DAILY_CAP = 200;
 
 /** Nº de oleadas de envío/día para llegar al hard cap (10 × 50). */
 export const PUBLIC_OWNER_LEADS_WAVES_PER_DAY = 10;
