@@ -100,7 +100,10 @@ export async function trackEmail(params: {
 }
 
 /** Propaga open/click a public_owner_leads si el tid es de outreach. */
-async function syncPublicOwnerLeadEngagement(emailId: string): Promise<void> {
+async function syncPublicOwnerLeadEngagement(
+  emailId: string,
+  kind: 'opened' | 'clicked'
+): Promise<void> {
   try {
     const meta = await sql`SELECT to_regclass('public.public_owner_leads') AS reg`
     if (!meta.rows[0]?.reg) return
@@ -114,8 +117,40 @@ async function syncPublicOwnerLeadEngagement(emailId: string): Promise<void> {
       WHERE p.tracking_id = et.id
         AND et.id = ${emailId}::uuid
     `
+    await applyFollowUpPatchOnEngagement(emailId, kind)
   } catch {
     /* no crítico */
+  }
+}
+
+/**
+ * Tras actualizar opened_at/clicked_at: lee el lead completo y programa FU (A click / B open).
+ * Tolerante a migración followup no aplicada (no rompe tracking).
+ */
+async function applyFollowUpPatchOnEngagement(
+  emailId: string,
+  kind: 'opened' | 'clicked'
+): Promise<void> {
+  try {
+    const { loadLeadSeqByTrackingId, persistSequencePatch } = await import(
+      '@/lib/public-owner-leads/sequence-db'
+    )
+    const { patchAfterOpened, patchAfterClicked } = await import(
+      '@/lib/public-owner-leads/sequence'
+    )
+    const lead = await loadLeadSeqByTrackingId(emailId)
+    if (!lead) return
+    const at = new Date().toISOString()
+    // Lead releído tras el UPDATE de timestamps (opened_at/clicked_at ya reflejados)
+    const patch =
+      kind === 'clicked' ? patchAfterClicked(lead, at) : patchAfterOpened(lead, at)
+    if (Object.keys(patch).length === 0) return
+    await persistSequencePatch(lead, patch)
+  } catch (e) {
+    console.warn(
+      '[public-owner-leads] follow-up patch:',
+      e instanceof Error ? e.message : e
+    )
   }
 }
 
@@ -146,7 +181,7 @@ export async function updateEmailTracking(params: {
         // Pixel abierto con tid inexistente (bots / preview) — ignorar en silencio.
         return
       }
-      await syncPublicOwnerLeadEngagement(emailId)
+      await syncPublicOwnerLeadEngagement(emailId, 'opened')
       const { accelerateLifecycleOnEmailOpen } = await import('@/lib/email-sequences/on-open')
       await accelerateLifecycleOnEmailOpen(emailId)
     } else if (params.status === 'clicked') {
@@ -166,7 +201,7 @@ export async function updateEmailTracking(params: {
         // Prefetch / Safe Links / bots con tid caducado — no es incidencia operativa.
         return
       }
-      await syncPublicOwnerLeadEngagement(emailId)
+      await syncPublicOwnerLeadEngagement(emailId, 'clicked')
       const { accelerateLifecycleOnEmailOpen } = await import('@/lib/email-sequences/on-open')
       await accelerateLifecycleOnEmailOpen(emailId)
     }

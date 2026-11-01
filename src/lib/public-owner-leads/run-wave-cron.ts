@@ -105,9 +105,10 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
         waveSent: outreach.sent,
         waveFailed: outreach.failed,
         extraNote:
-          progressKind === 'morning'
+          (progressKind === 'morning'
             ? 'Progreso fin de mañana (12:00) · 1/2 del día'
-            : 'Progreso media tarde (16:00) · 2/2 del día · cierre a las 21:00',
+            : 'Progreso media tarde (16:00) · 2/2 del día · cierre a las 21:00') +
+          ` · oleada: cold ${outreach.coldSent ?? 0} + FU ${outreach.fuSent ?? 0}`,
       });
     } else if (!dryRun && outreach.skippedBecauseGoalMet) {
       telegram = {

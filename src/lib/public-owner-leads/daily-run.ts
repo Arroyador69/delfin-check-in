@@ -7,8 +7,10 @@ import { sql } from '@/lib/db';
 import { isEmailSuppressed } from '@/lib/email-suppression';
 import {
   isPublicOwnerLeadsPaused,
+  PUBLIC_OWNER_LEADS_COLD_DAILY_CAP,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
+  PUBLIC_OWNER_LEADS_FU_DAILY_CAP,
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
   PUBLIC_OWNER_LEADS_MIN_QUEUED,
   PUBLIC_OWNER_LEADS_WAVE_MAX,
@@ -23,6 +25,9 @@ import {
   recycleEmptySources,
 } from './ensure-source-queue';
 import { sendTrackedOutreachLead } from './send-tracked';
+import { selectDueFollowUps } from './select-followups';
+import { stopSequenceByEmail } from './sequence-db';
+import type { OutreachTouch } from './template';
 import { sleep } from './fetch-html';
 import { hostSuggestsNonVacation } from './spain-vacation-filter';
 import type { OutreachAudience } from './spain-vacation-filter';
@@ -43,7 +48,12 @@ export type DailyOutreachResult = {
   sourcesProcessed: number;
   leadsDiscovered: number;
   queued: number;
+  /** Total enviados en la oleada (coldSent + fuSent). */
   sent: number;
+  /** Primer contacto (cold) enviados. */
+  coldSent: number;
+  /** Follow-ups (fu_click / fu_open / fu_silent) enviados. */
+  fuSent: number;
   failed: number;
   skippedSuppressed: number;
   /** Tras enviar: stock rellenado (norma: nunca dejar cola a 0). */
@@ -80,13 +90,42 @@ function dailyCap(): number {
   return Math.min(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP, Math.floor(raw));
 }
 
+/** Toques (cold+FU) enviados hoy — usa last_touch_at con fallback a sent_at. */
 async function countSentToday(): Promise<number> {
   const r = await sql`
     SELECT COUNT(*)::int AS n
     FROM public_owner_leads
-    WHERE status = 'sent'
-      AND sent_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
-        AT TIME ZONE 'Europe/Madrid'
+    WHERE COALESCE(last_touch_at, sent_at) >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+      AT TIME ZONE 'Europe/Madrid'
+      AND (
+        last_touch_kind IN ('cold', 'fu_click', 'fu_open', 'fu_silent')
+        OR (last_touch_kind IS NULL AND status = 'sent')
+      )
+  `;
+  return Number(r.rows[0]?.n || 0);
+}
+
+async function countColdToday(): Promise<number> {
+  const r = await sql`
+    SELECT COUNT(*)::int AS n
+    FROM public_owner_leads
+    WHERE COALESCE(last_touch_at, sent_at) >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+      AT TIME ZONE 'Europe/Madrid'
+      AND (
+        last_touch_kind = 'cold'
+        OR (last_touch_kind IS NULL AND status = 'sent' AND sent_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid') AT TIME ZONE 'Europe/Madrid')
+      )
+  `;
+  return Number(r.rows[0]?.n || 0);
+}
+
+async function countFuToday(): Promise<number> {
+  const r = await sql`
+    SELECT COUNT(*)::int AS n
+    FROM public_owner_leads
+    WHERE last_touch_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+      AT TIME ZONE 'Europe/Madrid'
+      AND last_touch_kind IN ('fu_click', 'fu_open', 'fu_silent')
   `;
   return Number(r.rows[0]?.n || 0);
 }
@@ -288,6 +327,8 @@ export async function runDailyPublicOwnerLeads(opts?: {
       leadsDiscovered: 0,
       queued: 0,
       sent: 0,
+      coldSent: 0,
+      fuSent: 0,
       failed: 0,
       skippedSuppressed: 0,
       errors: ['Ejecuta database/migration-public-owner-leads.sql (+ tracking) en Neon'],
@@ -317,6 +358,8 @@ export async function runDailyPublicOwnerLeads(opts?: {
       leadsDiscovered: 0,
       queued: 0,
       sent: 0,
+      coldSent: 0,
+      fuSent: 0,
       failed: 0,
       skippedSuppressed: 0,
       skippedBecauseGoalMet: false,
@@ -365,6 +408,8 @@ export async function runDailyPublicOwnerLeads(opts?: {
       leadsDiscovered: 0,
       queued: 0,
       sent: 0,
+      coldSent: 0,
+      fuSent: 0,
       failed: 0,
       skippedSuppressed: 0,
       refill: refillSummary,
@@ -544,11 +589,85 @@ export async function runDailyPublicOwnerLeads(opts?: {
   const sendBudget = wave === 'prepare' ? 0 : budget;
 
   let sent = 0;
+  let fuSent = 0;
+  let coldSent = 0;
   let failed = 0;
   let skippedSuppressed = 0;
 
   if (sendBudget > 0 && !dryRun) {
-    // Prioridad: agencias (flow-c / audience) primero en oleadas tarde/noche
+    const hardLeft = Math.max(0, cap - sentTodayBefore);
+    const room = Math.min(sendBudget, hardLeft, PUBLIC_OWNER_LEADS_WAVE_MAX);
+    const coldToday = await countColdToday();
+    const fuToday = await countFuToday();
+    let fuRoom = Math.min(room, Math.max(0, PUBLIC_OWNER_LEADS_FU_DAILY_CAP - fuToday));
+    if (coldToday >= PUBLIC_OWNER_LEADS_COLD_DAILY_CAP) {
+      fuRoom = Math.min(room, hardLeft);
+    }
+
+    let fuAttempted = 0;
+    let fuDueCount = 0;
+    let fuAborted = false;
+    // 1) Follow-ups primero (A click → B open → C silencio)
+    try {
+      const due = await selectDueFollowUps(fuRoom);
+      fuDueCount = due.length;
+      errors.push(`fu:due=${due.length} room=${fuRoom} today=${fuToday}`);
+      for (const lead of due) {
+        const email = lead.email.toLowerCase();
+        const notes = String(lead.notes || '');
+        let audience: OutreachAudience = 'owner';
+        if (/agency|flow-c|gestora|gesti[oó]n/i.test(notes)) audience = 'agency';
+        else if (/hotel|hostal/i.test(notes)) audience = 'hotel';
+        const touch = (lead.nextTouchKind || 'fu_open') as OutreachTouch;
+        if (touch === 'cold') continue;
+        try {
+          if (await isEmailSuppressed(email)) {
+            skippedSuppressed++;
+            // Cerrar secuencia: si no, volvería a salir due en cada oleada.
+            await stopSequenceByEmail(email, 'optout');
+            continue;
+          }
+        } catch {
+          /* ignore */
+        }
+        fuAttempted++;
+        const result = await sendTrackedOutreachLead({
+          id: lead.id,
+          email,
+          domain: lead.domain || '',
+          source_url: lead.sourceUrl || '',
+          audience,
+          touch,
+        });
+        if (result.ok) {
+          sent++;
+          fuSent++;
+        } else {
+          failed++;
+          if (result.error) errors.push(`fu:${email}: ${result.error}`);
+          if (result.retryable) {
+            errors.push('abort:rate-limit-fu');
+            fuAborted = true;
+            break;
+          }
+        }
+        await sleep(PUBLIC_OWNER_LEADS_MIN_DELAY_MS);
+      }
+    } catch (e) {
+      errors.push(`fu:select-fail:${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    // 2) Cold con el resto del cupo
+    const afterFu = Math.max(0, room - fuAttempted);
+    // Si ya no quedan FU due (menos due que fuRoom) cold puede usar hasta HARD;
+    // si los FU quedaron frenados por FU_CAP, cold respeta COLD_CAP.
+    const moreFuDue = fuDueCount >= fuRoom && fuRoom < room;
+    let coldRoom = moreFuDue
+      ? Math.min(afterFu, Math.max(0, PUBLIC_OWNER_LEADS_COLD_DAILY_CAP - coldToday))
+      : afterFu;
+    // Rate-limit en FU: no insistir con cold en esta oleada.
+    if (fuAborted) coldRoom = 0;
+
     const queue = await sql`
       SELECT id, email, domain, source_url, notes
       FROM public_owner_leads
@@ -561,10 +680,10 @@ export async function runDailyPublicOwnerLeads(opts?: {
         END ASC,
         queued_at ASC NULLS LAST,
         created_at ASC
-      LIMIT ${sendBudget}
+      LIMIT ${coldRoom}
     `;
 
-    /** Emails ya enviados (nunca reenviar el mismo). Mismo dominio OK (varios contactos). */
+    /** Emails ya enviados (nunca cold duplicado). */
     const emailsSent = new Set<string>();
     const alreadyEmail = await sql`
       SELECT lower(email) AS e FROM public_owner_leads WHERE status = 'sent'
@@ -638,15 +757,15 @@ export async function runDailyPublicOwnerLeads(opts?: {
         domain: String(row.domain || ''),
         source_url: String(row.source_url || ''),
         audience,
+        touch: 'cold',
       });
       if (result.ok) {
         sent++;
+        coldSent++;
         emailsSent.add(email);
-        if (domain) domainsSent.add(domain);
       } else {
         failed++;
         if (result.error) errors.push(`${email}: ${result.error}`);
-        // Zoho rate-limit: cortar oleada ya; el resto sigue en cola.
         if (result.retryable) {
           errors.push('abort:zoho-rate-limit');
           break;
@@ -654,6 +773,7 @@ export async function runDailyPublicOwnerLeads(opts?: {
       }
       await sleep(PUBLIC_OWNER_LEADS_MIN_DELAY_MS);
     }
+    errors.push(`wave:fuSent=${fuSent} coldSent=${coldSent}`);
   }
 
   // NORMA: tras CADA envío (o prepare), rellenar cola. Nunca a 0.
@@ -704,6 +824,8 @@ export async function runDailyPublicOwnerLeads(opts?: {
     leadsDiscovered: extract.discovered,
     queued,
     sent,
+    coldSent,
+    fuSent,
     failed,
     skippedSuppressed,
     refill: refillSummary,

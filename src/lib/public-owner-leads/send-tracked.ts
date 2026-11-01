@@ -1,8 +1,15 @@
 import { sql } from '@/lib/db';
 import { sendOutreachMail } from './send-smtp';
-import { buildColdOutreachEmail, type ColdEmailAudience } from './template';
+import {
+  buildColdOutreachEmail,
+  buildFollowUpOutreachEmail,
+  type ColdEmailAudience,
+  type OutreachTouch,
+} from './template';
 import { buildOutreachOptOutUrl } from './optout';
 import { buildOutreachActivateUrl } from './activate-link';
+import { applySequencePatch, loadSeqLead, markColdSentSequence } from './sequence-db';
+import { patchAfterFollowUpSent } from './sequence';
 import {
   PUBLIC_OWNER_LEADS_CAMPAIGN,
   PUBLIC_OWNER_LEADS_EMAIL_TYPE,
@@ -53,13 +60,28 @@ export async function sendTrackedOutreachLead(lead: {
   domain: string;
   source_url: string;
   audience?: ColdEmailAudience;
+  /** Tipo de toque (default cold). fu_* = follow-up sobre lead ya enviado. */
+  touch?: OutreachTouch;
 }): Promise<{ ok: boolean; trackingId?: string; error?: string; retryable?: boolean }> {
   const email = lead.email.trim().toLowerCase();
   const audience: ColdEmailAudience = lead.audience || 'owner';
+  const touch: OutreachTouch = lead.touch || 'cold';
+  const isFollowUp = touch !== 'cold';
   const optOutUrl = buildOutreachOptOutUrl(email, 'es');
   const signupRaw = signupUrlForLead(email);
-  const subjectPreview =
-    audience === 'agency'
+  const buildFollowUp = (signupUrl: string) =>
+    buildFollowUpOutreachEmail({
+      toEmail: email,
+      domain: lead.domain,
+      sourceUrl: lead.source_url,
+      optOutUrl,
+      signupUrl,
+      audience,
+      touch: touch as Exclude<OutreachTouch, 'cold'>,
+    });
+  const subjectPreview = isFollowUp
+    ? buildFollowUp(signupRaw).subject
+    : audience === 'agency'
       ? `${lead.domain || 'gestora'}: registro en 1 minuto — prueba gratis`
       : `${lead.domain || 'tu alojamiento'}: regístrate en 1 minuto y pruébalo gratis`;
 
@@ -87,6 +109,7 @@ export async function sendTrackedOutreachLead(lead: {
             source_url: lead.source_url,
             domain: lead.domain,
             audience,
+            touch,
           })}::jsonb
         )
         RETURNING id
@@ -98,14 +121,16 @@ export async function sendTrackedOutreachLead(lead: {
   }
 
   const trackedSignup = trackingId ? wrapClick(trackingId, signupRaw) : signupRaw;
-  const mail = buildColdOutreachEmail({
-    toEmail: email,
-    domain: lead.domain,
-    sourceUrl: lead.source_url,
-    optOutUrl,
-    signupUrl: trackedSignup,
-    audience,
-  });
+  const mail = isFollowUp
+    ? buildFollowUp(trackedSignup)
+    : buildColdOutreachEmail({
+        toEmail: email,
+        domain: lead.domain,
+        sourceUrl: lead.source_url,
+        optOutUrl,
+        signupUrl: trackedSignup,
+        audience,
+      });
 
   let html = mail.html;
   if (trackingId) {
@@ -139,17 +164,42 @@ export async function sendTrackedOutreachLead(lead: {
       `;
     }
 
-    await sql`
-      UPDATE public_owner_leads
-      SET
-        status = 'sent',
-        sent_at = NOW(),
-        updated_at = NOW(),
-        tracking_id = COALESCE(${trackingId || null}::uuid, tracking_id),
-        last_error = NULL,
-        notes = COALESCE(notes, '') || ${` | sent:${new Date().toISOString().slice(0, 10)}:${info.provider}`}
-      WHERE id = ${lead.id}::uuid
-    `;
+    const today = new Date().toISOString().slice(0, 10);
+    if (isFollowUp) {
+      // FU: lead ya 'sent'. NO tocar sent_at/status; nuevo tracking_id (opens/clicks del FU).
+      await sql`
+        UPDATE public_owner_leads
+        SET
+          updated_at = NOW(),
+          tracking_id = COALESCE(${trackingId || null}::uuid, tracking_id),
+          last_error = NULL,
+          notes = COALESCE(notes, '') || ${` | ${touch}:${today}`}
+        WHERE id = ${lead.id}::uuid
+      `;
+      try {
+        const seq = await loadSeqLead(lead.id);
+        if (seq) {
+          await applySequencePatch(lead.id, patchAfterFollowUpSent(seq, touch));
+        }
+      } catch (e) {
+        console.warn('[outreach-send] fu sequence patch:', e instanceof Error ? e.message : e);
+      }
+    } else {
+      await sql`
+        UPDATE public_owner_leads
+        SET
+          status = 'sent',
+          sent_at = NOW(),
+          updated_at = NOW(),
+          tracking_id = COALESCE(${trackingId || null}::uuid, tracking_id),
+          last_error = NULL,
+          notes = COALESCE(notes, '') || ${` | sent:${today}:${info.provider}`}
+        WHERE id = ${lead.id}::uuid
+      `;
+
+      // Follow-up: touch_count=1 + next=fu_silent (+8d). Best-effort (no-op sin migración).
+      await markColdSentSequence(lead.id);
+    }
 
     return { ok: true, trackingId: trackingId || undefined };
   } catch (e) {
@@ -173,6 +223,30 @@ export async function sendTrackedOutreachLead(lead: {
       } catch {
         /* ignore */
       }
+    }
+    if (isFollowUp) {
+      // FU fallido: el lead sigue 'sent'. Retryable → queda due para la próxima oleada.
+      // No retryable → cerrar secuencia (evita reintentar sin fin).
+      try {
+        await sql`
+          UPDATE public_owner_leads
+          SET
+            updated_at = NOW(),
+            last_error = ${msg.slice(0, 400)},
+            notes = COALESCE(notes, '') || ${retryable ? ` | ${touch}-retry` : ` | ${touch}-fail`}
+          WHERE id = ${lead.id}::uuid
+        `;
+        if (!retryable) {
+          await applySequencePatch(lead.id, {
+            sequenceStatus: 'exhausted',
+            nextTouchAt: null,
+            nextTouchKind: null,
+          });
+        }
+      } catch {
+        /* ignore */
+      }
+      return retryable ? { ok: false, error: msg, retryable: true } : { ok: false, error: msg };
     }
     if (retryable) {
       await sql`

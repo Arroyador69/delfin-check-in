@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { sql } from '@/lib/db';
+import { stopSequenceByEmail } from './sequence-db';
 
 const SCOPE = 'marketing';
 const TOKEN_SCOPE = 'owner_outreach';
@@ -91,6 +92,8 @@ export async function recordOutreachOptOut(email: string, reason?: string): Prom
           notes = COALESCE(notes, '') || ' | opt-out web'
         WHERE LOWER(TRIM(email)) = ${normalized}
       `;
+      // Parar follow-ups (no-op seguro si la migración followup no está aplicada)
+      await stopSequenceByEmail(normalized, 'stopped_optout');
     }
   } catch (e) {
     console.warn('[outreach-optout] public_owner_leads no actualizada:', e);

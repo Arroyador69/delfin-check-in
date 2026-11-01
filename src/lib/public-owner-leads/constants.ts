@@ -42,14 +42,48 @@ export const PUBLIC_OWNER_LEADS_WAVE_MAX = 50;
 export const PUBLIC_OWNER_LEADS_DAILY_TARGET = PUBLIC_OWNER_LEADS_WAVE_MAX;
 
 /**
- * Tope total del día = 20 oleadas × 50 = 1000
- * (cada ~30 min, ~08:00–17:30 Madrid) si altas < 20.
- * Nunca se reenvía al mismo email.
+ * Tope total del día (cold + follow-up) = 10 oleadas × 50 = 500.
+ * Reparto: cold 350 + FU 150. Cold nunca se reenvía al mismo email.
  */
-export const PUBLIC_OWNER_LEADS_DAILY_HARD_CAP = 1000;
+export const PUBLIC_OWNER_LEADS_DAILY_HARD_CAP = 500;
 
-/** Nº de oleadas/día para llegar al hard cap (20 × 50). */
-export const PUBLIC_OWNER_LEADS_WAVES_PER_DAY = 20;
+/** Tope diario solo cold (primer contacto). */
+export const PUBLIC_OWNER_LEADS_COLD_DAILY_CAP = 350;
+
+/** Tope diario solo follow-ups (FU-A click > FU-B open > FU-C silencio). */
+export const PUBLIC_OWNER_LEADS_FU_DAILY_CAP = 150;
+
+/** Nº de oleadas de envío/día para llegar al hard cap (10 × 50). */
+export const PUBLIC_OWNER_LEADS_WAVES_PER_DAY = 10;
+
+/**
+ * Slots de cron (cada 30 min, 08:00–17:30 Madrid). Independiente de las
+ * oleadas que realmente envían: el cron sigue disparando, el cap corta el envío.
+ * Mantiene intactos los slots de Telegram (8 y 16).
+ */
+export const PUBLIC_OWNER_LEADS_CRON_SLOTS_PER_DAY = 20;
+
+/* ── Follow-up outreach (port de NFCTap business-leads/constants) ── */
+
+/** FU-A: días tras click para el 1er follow-up. */
+export const POL_FU_CLICK_DELAY_DAYS = 2;
+/** FU-A: días entre 1er y 2º follow-up a quien hizo click. */
+export const POL_FU_CLICK_SECOND_DELAY_DAYS = 5;
+/** FU-B: días desde el cold enviado hasta follow-up a quien abrió (sin click). */
+export const POL_FU_OPEN_DELAY_DAYS = 3;
+/** FU-C: días desde el cold enviado hasta follow-up a silenciosos. */
+export const POL_FU_SILENT_DELAY_DAYS = 8;
+
+/**
+ * Meta operativa hoy: altas Plan Check-in (pago) atribuidas a outreach/FU.
+ * Complementa ONBOARDINGS_DAILY_GOAL (completed gratis).
+ */
+export const PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL = 10;
+
+/** Máx. toques totales (cold incluido). Click: cold + 2 FU. Open/silent: cold + 1 FU. */
+export const POL_FU_MAX_TOUCHES_CLICK = 3;
+export const POL_FU_MAX_TOUCHES_OPEN = 2;
+export const POL_FU_MAX_TOUCHES_SILENT = 2;
 
 /** Alias: todas las oleadas usan el mismo tope 50. */
 export const PUBLIC_OWNER_LEADS_AFTERNOON_MAX = PUBLIC_OWNER_LEADS_WAVE_MAX;
