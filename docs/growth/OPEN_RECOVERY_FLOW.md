@@ -45,3 +45,16 @@ Prioridad en oleada: **A click → B open → C silencio → recovery → cold**
 ## Panel
 
 SuperAdmin → Captación → bloque **Recovery opens**.
+
+## Lunes / arranque del día (CET invierno)
+
+| Hora Madrid | Cron UTC | Qué hace |
+|-------------|----------|----------|
+| 07:00 | `0 6` | **Prepare**: cola ≥1000 + backfill recovery opens (hasta 300) |
+| 07:15 | `15 6` | **Lifecycle** lote 1 (onboarding incompleto → alta/pago) |
+| 07:20 | `20 6` | **Checkout recovery** Polar abandonados |
+| 08:00–20:30 | `0,30 7-19` | **Oleadas** A→B→C→recovery→cold hasta HARD 1300 |
+| 12:15 | `15 11` | **Lifecycle** lote 2 |
+| 12:00 / 16:00 / 21:00 | Telegram | Progreso / cierre |
+
+Meta día: **10 Plan Check-in**. Si se cumple, las oleadas paran.

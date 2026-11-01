@@ -3,11 +3,14 @@ import { authorizeCronSecret } from '@/lib/cron-auth';
 import { processLifecycleEmailQueue } from '@/lib/email-sequences/engine';
 import { retryFailedOnboardingEmails } from '@/lib/retry-failed-onboarding-emails';
 
+export const maxDuration = 300;
+
 /**
- * Cron diario: sincroniza inscripciones y envía emails lifecycle pendientes.
- * También reintenta onboarding fallidos (rate-limit Zoho, etc.).
- * GET /api/cron/email-sequences
- * Auth: Authorization Bearer CRON_SECRET (no confiar en x-vercel-cron).
+ * Cron lifecycle (Europe/Madrid invierno ≈ UTC+1):
+ * - 07:15 (`15 6 * * *`) primera pasada
+ * - 12:15 (`15 11 * * *`) segunda pasada
+ * Lotes pequeños (default 20) para no timeout Vercel.
+ * GET /api/cron/email-sequences?max=20
  */
 export async function GET(req: NextRequest) {
   if (!authorizeCronSecret(req)) {
@@ -15,7 +18,7 @@ export async function GET(req: NextRequest) {
   }
 
   const dryRun = req.nextUrl.searchParams.get('dryRun') === '1';
-  const maxSends = parseInt(req.nextUrl.searchParams.get('max') || '40', 10);
+  const maxSends = parseInt(req.nextUrl.searchParams.get('max') || '20', 10);
 
   try {
     let onboardingRetry: unknown = null;
