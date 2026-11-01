@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db';
+import { stopSequenceByEmail } from './sequence-db';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -41,6 +42,8 @@ export async function markPublicOwnerLeadSignedUp(params: {
             AND signed_up_at IS NULL
           RETURNING id
         `;
+    // Venta atribuida → parar follow-ups (incluso si signed_up_at ya estaba marcado)
+    await stopSequenceByEmail(email, 'stopped_sale');
     return (result.rowCount || 0) > 0;
   } catch (e) {
     console.warn('[public-owner-leads] markSignedUp:', e instanceof Error ? e.message : e);

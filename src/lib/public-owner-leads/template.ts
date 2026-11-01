@@ -366,6 +366,214 @@ Gratis (sin tarjeta): formulario, panel, limpiezas y envío manual a SES Hospeda
   return { subject, text, html };
 }
 
+/** Tipo de toque de la secuencia (alineado con `TouchKind` de sequence.ts). */
+export type OutreachTouch = 'cold' | 'fu_click' | 'fu_open' | 'fu_silent';
+
+export interface FollowUpEmailParams {
+  toEmail: string;
+  domain: string;
+  /** Compat API; no se menciona en el cuerpo. */
+  sourceUrl: string;
+  optOutUrl: string;
+  signupUrl: string;
+  audience?: ColdEmailAudience;
+  touch: Exclude<OutreachTouch, 'cold'>;
+}
+
+/**
+ * Follow-up corto (click > open > silencio). Mismo esqueleto HTML que el cold
+ * (cabecera, CTA, opt-out) pero sin vídeo ni bloque de beneficios.
+ * Hotel/agencia: tono «vosotros». VR (owner): empuja Plan Check-in (~2€).
+ */
+export function buildFollowUpOutreachEmail(params: FollowUpEmailParams): {
+  subject: string;
+  text: string;
+  html: string;
+} {
+  const audience = params.audience || 'owner';
+  const isAgency = audience === 'agency';
+  const isHotel = audience === 'hotel';
+  const plural = isAgency || isHotel;
+  const touch = params.touch;
+  const domainLabel =
+    params.domain ||
+    (isAgency ? 'vuestra gestora' : isHotel ? 'vuestro hotel' : 'tu alojamiento');
+  const signup = params.signupUrl;
+  const sender = 'Equipo Delfín Check-in';
+  const year = new Date().getFullYear();
+
+  let subject: string;
+  let preheader: string;
+  let paragraphs: string[];
+  let ctaLabel: string;
+
+  if (touch === 'fu_click') {
+    subject = `${domainLabel}: ${plural ? 'os faltó' : 'te faltó'} un minuto`;
+    preheader = plural
+      ? 'Visteis el registro de Delfín Check-in: queda 1 minuto para tener el enlace del huésped.'
+      : 'Viste el registro de Delfín Check-in: queda 1 minuto para tener tu enlace del huésped.';
+    if (isHotel) {
+      paragraphs = [
+        `Vimos que os interesó Delfín Check-in para ${domainLabel}. Os quedó a medias: registraos en 1 minuto (gratis, sin tarjeta) y tendréis el enlace de check-in del huésped listo.`,
+        `El huésped rellena en el móvil y el parte de viajeros a SES Hospedajes sale sin papeleo en recepción. Si más adelante queréis que el envío sea automático, está el Plan Check-in; para empezar no hace falta.`,
+      ];
+    } else if (isAgency) {
+      paragraphs = [
+        `Vimos que os interesó Delfín Check-in para ${domainLabel}. Os faltó un minuto: cread la cuenta (gratis, sin tarjeta) y ya tenéis el enlace del huésped.`,
+        `Con el Plan Check-in (~2€/mes + 2€ por propiedad adicional) el envío del parte de viajeros a SES Hospedajes es automático en todas vuestras viviendas.`,
+      ];
+    } else {
+      paragraphs = [
+        `Vimos que te interesó Delfín Check-in para ${domainLabel}. Te faltó un minuto: regístrate (gratis, sin tarjeta) y ya tienes tu enlace de check-in para el huésped.`,
+        `Con el Plan Check-in (~2€/mes) el envío del parte de viajeros a SES Hospedajes es automático: el huésped rellena en el móvil y tú no tocas nada.`,
+      ];
+    }
+    ctaLabel = plural ? 'Crear cuenta · 1 minuto' : 'Regístrate · 1 minuto';
+  } else if (touch === 'fu_open') {
+    subject = `${domainLabel}: check-in SES en el móvil`;
+    preheader = plural
+      ? 'El huésped hace el check-in en el móvil y vosotros enviáis el parte a SES Hospedajes.'
+      : 'El huésped hace el check-in en el móvil y tú envías el parte a SES Hospedajes.';
+    if (isHotel) {
+      paragraphs = [
+        `Para ${domainLabel}: el huésped hace el check-in en el móvil y el parte de viajeros a SES Hospedajes queda listo sin copiar datos a mano.`,
+        `Registraos en 1 minuto, gratis y sin tarjeta.`,
+      ];
+    } else if (isAgency) {
+      paragraphs = [
+        `Para ${domainLabel}: el huésped hace el check-in en el móvil y el parte a SES Hospedajes sale sin copiar datos a mano. Con Plan Check-in (~2€/mes) es automático.`,
+        `Cread la cuenta en 1 minuto, gratis y sin tarjeta.`,
+      ];
+    } else {
+      paragraphs = [
+        `Para ${domainLabel}: el huésped hace el check-in en el móvil y el parte a SES Hospedajes sale sin copiar datos a mano. Con Plan Check-in (~2€/mes) es automático.`,
+        `Regístrate en 1 minuto, gratis y sin tarjeta.`,
+      ];
+    }
+    ctaLabel = plural ? 'Crear cuenta gratis · 1 minuto' : 'Regístrate gratis · 1 minuto';
+  } else {
+    subject = `última nota sobre ${domainLabel}`;
+    if (plural) {
+      paragraphs = [
+        `Última nota sobre ${domainLabel}: si os sirve el check-in en el móvil con parte a SES Hospedajes, podéis registraros gratis en 1 minuto. Si no, no os escribimos más.`,
+      ];
+    } else {
+      paragraphs = [
+        `Última nota sobre ${domainLabel}: si te sirve el check-in en el móvil con parte a SES Hospedajes (envío automático con Plan Check-in, ~2€/mes), puedes registrarte gratis en 1 minuto. Si no, no te escribimos más.`,
+      ];
+    }
+    preheader = plural
+      ? 'Una sola frase y no os escribimos más.'
+      : 'Una sola frase y no te escribimos más.';
+    ctaLabel = plural ? 'Crear cuenta gratis' : 'Regístrate gratis';
+  }
+
+  const priceLine = isHotel
+    ? ''
+    : 'Plan Check-in (envío automático a SES Hospedajes): 2€/mes + 2€/propiedad adicional';
+  const optOutIntro = plural
+    ? 'Si no os interesa, baja aquí y no os escribiremos más:'
+    : 'Si no te interesa, baja aquí y no te escribiremos más:';
+
+  const text = [
+    `Hola,`,
+    ``,
+    ...paragraphs.flatMap((p) => [p, ``]),
+    `${ctaLabel}:`,
+    signup,
+    ...(priceLine ? [``, priceLine] : []),
+    ``,
+    optOutIntro,
+    params.optOutUrl,
+    ``,
+    `Un saludo,`,
+    sender,
+    `https://delfincheckin.com`,
+    ``,
+    `© ${year} Delfín Check-in`,
+  ].join('\n');
+
+  const html = `<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="x-apple-disable-message-reformatting" />
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
+  <title>${escapeHtml(subject)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#e8f4fc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
+    ${escapeHtml(preheader)}
+  </div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#e8f4fc;border-collapse:collapse;">
+    <tr>
+      <td align="center" style="padding:32px 12px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #cfe5f5;border-radius:14px;border-collapse:separate;overflow:hidden;">
+          <tr>
+            <td style="background-color:#0369a1;height:6px;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td align="left" style="background-color:#0284c7;padding:20px 28px;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:22px;line-height:1.2;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">Delfín Check-in</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:26px 28px 6px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65;color:#0f172a;">
+              <p style="margin:0 0 14px;">Hola,</p>
+              ${paragraphs
+                .map((p) => `<p style="margin:0 0 16px;">${escapeHtml(p)}</p>`)
+                .join('\n              ')}
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:14px 28px 8px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
+                <tr>
+                  <td align="center" bgcolor="#075985" style="border-radius:14px;background-color:#075985;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                      <tr>
+                        <td align="center" bgcolor="#0284c7" style="border-radius:12px;background-color:#0284c7;mso-padding-alt:0;">
+                          <a href="${escapeAttr(signup)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:18px 40px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;line-height:1.25;">
+                            ${escapeHtml(ctaLabel)}
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:14px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#0369a1;font-weight:700;">
+                Gratis · sin tarjeta · sin compromiso
+              </p>${
+                priceLine
+                  ? `
+              <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45;color:#64748b;">
+                ${escapeHtml(priceLine)}
+              </p>`
+                  : ''
+              }
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 28px 26px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55;color:#64748b;border-top:1px solid #e2e8f0;">
+              <p style="margin:0 0 12px;">${plural ? 'Si no os interesa' : 'Si no te interesa'}, <a href="${escapeAttr(params.optOutUrl)}" style="color:#0284c7;">${plural ? 'daos de baja en un clic' : 'date de baja en un clic'}</a>
+                y no ${plural ? 'os' : 'te'} volveremos a escribir. También puedes escribir a
+                <a href="mailto:soporte@delfincheckin.com" style="color:#0284c7;">soporte@delfincheckin.com</a>.</p>
+              <p style="margin:0;font-size:12px;color:#94a3b8;">© ${year} Delfín Check-in</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  return { subject, text, html };
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

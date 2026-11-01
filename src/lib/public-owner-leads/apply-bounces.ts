@@ -4,6 +4,7 @@
  */
 
 import { sql } from '@/lib/db';
+import { stopSequenceByEmail } from './sequence-db';
 import {
   normalizeSuppressionEmail,
   parseEmailsFromCsvText,
@@ -67,6 +68,9 @@ export async function applyOutreachBounceEmails(
         AND status IS DISTINCT FROM 'bounced'
       RETURNING id, tracking_id
     `;
+    // Parar follow-ups aunque el lead ya estuviera 'bounced' (no-op sin migración)
+    await stopSequenceByEmail(email, 'stopped_bounce');
+
     if (lead.rows[0]?.id) {
       leadsMarked += 1;
       const tid = lead.rows[0].tracking_id ? String(lead.rows[0].tracking_id) : '';

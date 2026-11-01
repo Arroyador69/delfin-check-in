@@ -9,6 +9,7 @@
 import {
   PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_LEADS_WAVES_PER_DAY,
+  PUBLIC_OWNER_LEADS_CRON_SLOTS_PER_DAY,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_TG_MORNING_SLOT,
   PUBLIC_OWNER_LEADS_TG_AFTERNOON_SLOT,
@@ -36,7 +37,7 @@ export function madridHalfHourSlot(now = new Date()): number | null {
 
   const mins = hour * 60 + minute;
   const start = FIRST_HOUR_MADRID * 60 + FIRST_MINUTE_MADRID;
-  const endExclusive = start + PUBLIC_OWNER_LEADS_WAVES_PER_DAY * 30; // 20×30 = 600 → 18:00
+  const endExclusive = start + PUBLIC_OWNER_LEADS_CRON_SLOTS_PER_DAY * 30; // 20×30 = 600 → 18:00
   if (mins < start || mins >= endExclusive) return null;
 
   const offset = mins - start;
