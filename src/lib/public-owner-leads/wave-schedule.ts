@@ -1,7 +1,7 @@
 /**
- * Horario de oleadas Zoho-safe: 50 mails × 20 slots ≈ 1000/día.
- * Ventana Europe/Madrid ~08:00–17:30 (cada 30 min).
- * Vercel cron UTC invierno (CET): `0,30 7-16 * * *`.
+ * Horario de oleadas: WAVE_MAX × slots ≈ HARD_CAP/día.
+ * Ventana Europe/Madrid 08:00–20:30 (cada 30 min); 18:00–20:30 = catch-up.
+ * Vercel cron UTC invierno (CET): `0,30 7-19 * * *`.
  *
  * Telegram: solo 3/día → 12:00 progreso · 16:00 progreso · 21:00 cierre.
  */
@@ -10,6 +10,7 @@ import {
   PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_LEADS_WAVES_PER_DAY,
   PUBLIC_OWNER_LEADS_CRON_SLOTS_PER_DAY,
+  PUBLIC_OWNER_LEADS_CATCHUP_FIRST_SLOT,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_TG_MORNING_SLOT,
   PUBLIC_OWNER_LEADS_TG_AFTERNOON_SLOT,
@@ -37,11 +38,38 @@ export function madridHalfHourSlot(now = new Date()): number | null {
 
   const mins = hour * 60 + minute;
   const start = FIRST_HOUR_MADRID * 60 + FIRST_MINUTE_MADRID;
-  const endExclusive = start + PUBLIC_OWNER_LEADS_CRON_SLOTS_PER_DAY * 30; // 20×30 = 600 → 18:00
+  const endExclusive = start + PUBLIC_OWNER_LEADS_CRON_SLOTS_PER_DAY * 30; // 26×30 → 20:30
   if (mins < start || mins >= endExclusive) return null;
 
   const offset = mins - start;
   return Math.floor(offset / 30);
+}
+
+/**
+ * Tamaño de oleada con catch-up: si vamos por debajo del ritmo hacia HARD_CAP
+ * (y aún no hay meta Check-in), ampliar el batch para no acabar el día a medias.
+ */
+export function catchUpSendBudget(opts: {
+  sentToday: number;
+  hardCap?: number;
+  waveMax?: number;
+  slot: number | null;
+}): number {
+  const hardCap = opts.hardCap ?? PUBLIC_OWNER_LEADS_DAILY_HARD_CAP;
+  const waveMax = opts.waveMax ?? PUBLIC_OWNER_LEADS_WAVE_MAX;
+  const left = Math.max(0, hardCap - opts.sentToday);
+  if (left <= 0) return 0;
+
+  const slots = PUBLIC_OWNER_LEADS_CRON_SLOTS_PER_DAY;
+  const slot = opts.slot;
+  if (slot == null) {
+    return Math.min(left, waveMax * 2);
+  }
+  const slotsLeft = Math.max(1, slots - slot);
+  const fairShare = Math.ceil(left / slotsLeft);
+  const inCatchup = slot >= PUBLIC_OWNER_LEADS_CATCHUP_FIRST_SLOT;
+  const boost = inCatchup ? waveMax * 3 : waveMax * 2;
+  return Math.min(left, Math.max(waveMax, fairShare), boost);
 }
 
 /**
@@ -82,8 +110,8 @@ export function waveScheduleSummary(): {
     waveMax: PUBLIC_OWNER_LEADS_WAVE_MAX,
     wavesPerDay: PUBLIC_OWNER_LEADS_WAVES_PER_DAY,
     dailyHardCap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
-    windowMadrid: '08:00–17:30 cada 30 min',
-    cronUtcHint: '0,30 7-16 * * * (CET invierno ≈ Madrid)',
+    windowMadrid: '08:00–20:30 cada 30 min (18:00+ catch-up si falta cupo/meta)',
+    cronUtcHint: '0,30 7-19 * * * (CET invierno ≈ Madrid)',
     telegramDay: '12:00 progreso · 16:00 progreso · 21:00 cierre (3/día)',
   };
 }

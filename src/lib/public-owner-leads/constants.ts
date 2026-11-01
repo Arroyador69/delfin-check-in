@@ -58,11 +58,15 @@ export const PUBLIC_OWNER_LEADS_FU_DAILY_CAP = 1000;
 export const PUBLIC_OWNER_LEADS_WAVES_PER_DAY = 20;
 
 /**
- * Slots de cron (cada 30 min, 08:00–17:30 Madrid). Independiente de las
- * oleadas que realmente envían: el cron sigue disparando, el cap corta el envío.
- * Mantiene intactos los slots de Telegram (8 y 16).
+ * Slots de cron (cada 30 min, 08:00–20:30 Madrid).
+ * Tras 17:30 = catch-up: si no hay meta Plan Check-in y queda cupo HARD, se sigue
+ * enviando hasta el tope (no dejar el día a medias).
+ * Slots Telegram 12:00 / 16:00 intactos (8 y 16).
  */
-export const PUBLIC_OWNER_LEADS_CRON_SLOTS_PER_DAY = 20;
+export const PUBLIC_OWNER_LEADS_CRON_SLOTS_PER_DAY = 26;
+
+/** A partir de este slot (18:00 Madrid = slot 20) es franja catch-up. */
+export const PUBLIC_OWNER_LEADS_CATCHUP_FIRST_SLOT = 20;
 
 /* ── Follow-up outreach (port de NFCTap business-leads/constants) ── */
 

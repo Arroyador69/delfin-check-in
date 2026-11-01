@@ -620,9 +620,7 @@ export async function runDailyPublicOwnerLeads(opts?: {
       fuRoom = Math.min(room, hardLeft);
     }
 
-    let fuAttempted = 0;
     let fuDueCount = 0;
-    let fuAborted = false;
     // 1) Follow-ups primero (A click → B open → C silencio)
     try {
       const due = await selectDueFollowUps(fuRoom);
@@ -646,7 +644,6 @@ export async function runDailyPublicOwnerLeads(opts?: {
         } catch {
           /* ignore */
         }
-        fuAttempted++;
         const result = await sendTrackedOutreachLead({
           id: lead.id,
           email,
@@ -661,10 +658,11 @@ export async function runDailyPublicOwnerLeads(opts?: {
         } else {
           failed++;
           if (result.error) errors.push(`fu:${email}: ${result.error}`);
+          // Rate-limit FU: saltar este lead y seguir; NO matar el cold de la oleada.
           if (result.retryable) {
-            errors.push('abort:rate-limit-fu');
-            fuAborted = true;
-            break;
+            errors.push('fu:rate-limit-skip-lead');
+            await sleep(PUBLIC_OWNER_LEADS_MIN_DELAY_MS * 2);
+            continue;
           }
         }
         await sleep(PUBLIC_OWNER_LEADS_MIN_DELAY_MS);
@@ -673,16 +671,19 @@ export async function runDailyPublicOwnerLeads(opts?: {
       errors.push(`fu:select-fail:${e instanceof Error ? e.message : String(e)}`);
     }
 
-    // 2) Cold con el resto del cupo
-    const afterFu = Math.max(0, room - fuAttempted);
-    // Si ya no quedan FU due (menos due que fuRoom) cold puede usar hasta HARD;
-    // si los FU quedaron frenados por FU_CAP, cold respeta COLD_CAP.
-    const moreFuDue = fuDueCount >= fuRoom && fuRoom < room;
-    let coldRoom = moreFuDue
-      ? Math.min(afterFu, Math.max(0, PUBLIC_OWNER_LEADS_COLD_DAILY_CAP - coldToday))
-      : afterFu;
-    // Rate-limit en FU: no insistir con cold en esta oleada.
-    if (fuAborted) coldRoom = 0;
+    // 2) Cold: SIEMPRE rellenar el hueco de la oleada hasta COLD_CAP / HARD.
+    // Si no hay más FU due, el cold puede usar todo el room restante (hasta hard).
+    // Así no nos quedamos a media jornada por debajo del tope sin meta Check-in.
+    const afterFu = Math.max(0, room - fuSent);
+    const coldLeftCap = Math.max(0, PUBLIC_OWNER_LEADS_COLD_DAILY_CAP - coldToday);
+    const hardLeftAfterFu = Math.max(0, hardLeft - fuSent);
+    let coldRoom =
+      fuDueCount === 0
+        ? Math.min(afterFu, hardLeftAfterFu) // sin FU: empujar cold hasta agotar oleada/hard
+        : Math.min(afterFu, coldLeftCap, hardLeftAfterFu);
+    errors.push(
+      `cold:room=${coldRoom} afterFu=${afterFu} coldLeft=${coldLeftCap} fuDue=${fuDueCount}`
+    );
 
     const queue = await sql`
       SELECT id, email, domain, source_url, notes

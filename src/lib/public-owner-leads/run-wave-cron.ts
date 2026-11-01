@@ -6,6 +6,8 @@
 
 import {
   isPublicOwnerLeadsPaused,
+  PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL,
+  PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
   PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
@@ -17,10 +19,12 @@ import {
 } from './daily-run';
 import { notifyCaptacionWave } from './captacion-telegram';
 import {
+  catchUpSendBudget,
   isProgressTelegramSlot,
   madridHalfHourSlot,
   waveFromSlot,
 } from './wave-schedule';
+import { sql } from '@/lib/db';
 
 export type WaveCronResult = {
   success: boolean;
@@ -71,7 +75,7 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
       slot: null,
       outsideWindow: true,
       dryRun,
-      error: 'Fuera de ventana 08:00–17:30 Madrid — sin envío',
+      error: 'Fuera de ventana 08:00–20:30 Madrid — sin envío',
     };
   }
 
@@ -83,7 +87,39 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
       engagement = { error: e instanceof Error ? e.message : String(e) };
     }
 
-    const maxSend = opts?.maxSend ?? PUBLIC_OWNER_LEADS_WAVE_MAX;
+    // Catch-up: si no hay meta Check-in y queda cupo, ampliar oleada al ritmo del día.
+    let maxSend = opts?.maxSend ?? PUBLIC_OWNER_LEADS_WAVE_MAX;
+    if (opts?.maxSend == null && !dryRun) {
+      try {
+        const paidR = await sql`
+          SELECT COUNT(*)::int AS n FROM tenants
+          WHERE plan_type IN ('checkin', 'standard', 'pro')
+            AND updated_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+              AT TIME ZONE 'Europe/Madrid'
+        `;
+        const paidToday = Number(paidR.rows[0]?.n || 0);
+        const touchR = await sql`
+          SELECT COUNT(*)::int AS n FROM public_owner_leads
+          WHERE COALESCE(last_touch_at, sent_at) >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+            AT TIME ZONE 'Europe/Madrid'
+            AND (
+              last_touch_kind IN ('cold', 'fu_click', 'fu_open', 'fu_silent')
+              OR (last_touch_kind IS NULL AND status = 'sent')
+            )
+        `;
+        const sentToday = Number(touchR.rows[0]?.n || 0);
+        if (paidToday < PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL) {
+          maxSend = catchUpSendBudget({
+            sentToday,
+            hardCap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
+            waveMax: PUBLIC_OWNER_LEADS_WAVE_MAX,
+            slot,
+          });
+        }
+      } catch {
+        /* keep WAVE_MAX */
+      }
+    }
     const progressKind = isProgressTelegramSlot(slot);
     // Siempre enviar PRIMERO sin refill pesado (anti-timeout Vercel 300s).
     // Refill ligero después. Prepare (07:00) hace refill completo a ≥1000.
