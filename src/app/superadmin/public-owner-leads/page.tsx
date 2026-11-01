@@ -267,7 +267,6 @@ export default function PublicOwnerLeadsAdminPage() {
   const fuToday = Number(today.fu_today || 0);
   const signupsToday = Number(today.signed_up_today || 0);
   const sendPct = Math.min(100, Math.round((sentToday / Math.max(hardCap, 1)) * 100));
-  const coldPct = Math.min(100, Math.round((coldToday / Math.max(coldCap, 1)) * 100));
   const fuPct = Math.min(100, Math.round((fuToday / Math.max(fuCap, 1)) * 100));
   const signupPct = Math.min(
     100,
@@ -304,9 +303,9 @@ export default function PublicOwnerLeadsAdminPage() {
             </h1>
             <p className="mt-1 text-slate-600 max-w-3xl text-[15px] leading-relaxed">
               Sistema <strong className="text-slate-900">cold + follow-up (A→B→C)</strong> · tope{' '}
-              <strong className="text-slate-900">{hardCap}/día</strong> (
-              <strong className="text-slate-900">{coldCap} cold</strong> +{' '}
-              <strong className="text-slate-900">{fuCap} FU</strong>) · FU primero ·{' '}
+              <strong className="text-slate-900">{hardCap}/día</strong> · FU primero (hasta{' '}
+              <strong className="text-slate-900">{fuCap}</strong>) · cold rellena el hueco hasta el tope
+              (soft {coldCap}, puede superar si falta FU) ·{' '}
               <strong className="text-slate-900">meta #{checkinPaidGoal} Plan Check-in / día</strong>{' '}
               (onboardings {ONBOARDING_DAILY_GOAL} secundario) · {scheduleHint} · cola{' '}
               <strong className="text-slate-900">{reserveReady}</strong>
@@ -363,7 +362,7 @@ export default function PublicOwnerLeadsAdminPage() {
               onClick={() => {
                 if (
                   !confirm(
-                    `¿Enviar hasta ${waveSize} emails ahora? (FU primero · delay ${delaySec}s · tope ${hardCap}: ${coldCap} cold + ${fuCap} FU · meta ${checkinPaidGoal} Plan Check-in)`
+                    `¿Enviar hasta ${waveSize} emails ahora? (FU primero · cold rellena hasta tope ${hardCap} · delay ${delaySec}s · meta ${checkinPaidGoal} Plan Check-in)`
                   )
                 )
                   return;
@@ -516,12 +515,17 @@ export default function PublicOwnerLeadsAdminPage() {
                     </p>
                     <p className="text-lg font-semibold tabular-nums text-slate-900">
                       {coldToday}
-                      <span className="text-sm text-slate-400 font-medium"> / {coldCap}</span>
+                      <span className="text-sm text-slate-400 font-medium">
+                        {' '}
+                        soft {coldCap} · ≤{hardCap}
+                      </span>
                     </p>
                     <div className="mt-1.5 h-1.5 rounded-full bg-white overflow-hidden">
                       <div
                         className="h-full rounded-full bg-slate-500"
-                        style={{ width: `${coldPct}%` }}
+                        style={{
+                          width: `${Math.min(100, Math.round((coldToday / Math.max(hardCap, 1)) * 100))}%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -564,7 +568,7 @@ export default function PublicOwnerLeadsAdminPage() {
                     Embudo follow-up (A click → B open → C silencio)
                   </h2>
                   <p className="mt-0.5 text-xs text-violet-800/80">
-                    Prioridad en cada oleada: due A, luego B, luego C; el resto del cupo a cold.
+                    Prioridad: due A → B → C; el resto del cupo y del tope diario lo rellena cold.
                   </p>
                 </div>
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-violet-100 text-violet-900">
@@ -588,10 +592,10 @@ export default function PublicOwnerLeadsAdminPage() {
             <section className="rounded-2xl border border-sky-100 bg-sky-50/60 px-5 py-4 text-sm text-slate-700">
               <p className="font-semibold text-slate-900">Horario · sistema rentable (Europe/Madrid)</p>
               <p className="mt-1 leading-relaxed">
-                Prepare ~07:00 · oleadas {wavesPerDay}×{waveSize} entre 08:00–17:30 · en cada oleada{' '}
-                <strong>FU primero</strong> (click→open→silent) luego cold hasta cupos ({coldCap}+
-                {fuCap}={hardCap}) · Telegram 12:00 · 16:00 · 21:00 · delay {delaySec}s. Si Plan
-                Check-in ≥{checkinPaidGoal}, se para el día.
+                Prepare ~07:00 · oleadas {wavesPerDay}×{waveSize} · 08:00–20:30 · en cada oleada{' '}
+                <strong>FU primero</strong> (A→B→C); si no hay FU due suficiente,{' '}
+                <strong>cold rellena hasta {hardCap}</strong> (soft cold {coldCap}) · Telegram 12:00 ·
+                16:00 · 21:00 · delay {delaySec}s. Si Plan Check-in ≥{checkinPaidGoal}, se para el día.
               </p>
             </section>
 

@@ -615,6 +615,7 @@ export async function runDailyPublicOwnerLeads(opts?: {
     const room = Math.min(sendBudget, hardLeft, PUBLIC_OWNER_LEADS_WAVE_MAX);
     const coldToday = await countColdToday();
     const fuToday = await countFuToday();
+    // FU preferente hasta FU_CAP; si el soft cold ya se cumplió, FU puede usar todo el room.
     let fuRoom = Math.min(room, Math.max(0, PUBLIC_OWNER_LEADS_FU_DAILY_CAP - fuToday));
     if (coldToday >= PUBLIC_OWNER_LEADS_COLD_DAILY_CAP) {
       fuRoom = Math.min(room, hardLeft);
@@ -671,18 +672,13 @@ export async function runDailyPublicOwnerLeads(opts?: {
       errors.push(`fu:select-fail:${e instanceof Error ? e.message : String(e)}`);
     }
 
-    // 2) Cold: SIEMPRE rellenar el hueco de la oleada hasta COLD_CAP / HARD.
-    // Si no hay más FU due, el cold puede usar todo el room restante (hasta hard).
-    // Así no nos quedamos a media jornada por debajo del tope sin meta Check-in.
+    // 2) Cold rellena SIEMPRE hasta el tope HARD del día (1300), no se queda en soft 300.
+    // FU primero; lo que no se use de la oleada / del hard → cold (stock para el futuro).
     const afterFu = Math.max(0, room - fuSent);
-    const coldLeftCap = Math.max(0, PUBLIC_OWNER_LEADS_COLD_DAILY_CAP - coldToday);
     const hardLeftAfterFu = Math.max(0, hardLeft - fuSent);
-    let coldRoom =
-      fuDueCount === 0
-        ? Math.min(afterFu, hardLeftAfterFu) // sin FU: empujar cold hasta agotar oleada/hard
-        : Math.min(afterFu, coldLeftCap, hardLeftAfterFu);
+    const coldRoom = Math.min(afterFu, hardLeftAfterFu);
     errors.push(
-      `cold:room=${coldRoom} afterFu=${afterFu} coldLeft=${coldLeftCap} fuDue=${fuDueCount}`
+      `cold:room=${coldRoom} afterFu=${afterFu} hardLeft=${hardLeftAfterFu} fuDue=${fuDueCount} coldToday=${coldToday} softCold=${PUBLIC_OWNER_LEADS_COLD_DAILY_CAP}`
     );
 
     const queue = await sql`
