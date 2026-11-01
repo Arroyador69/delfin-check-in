@@ -8,42 +8,56 @@ import {
   POL_FU_MAX_TOUCHES_CLICK,
   POL_FU_MAX_TOUCHES_OPEN,
   POL_FU_MAX_TOUCHES_SILENT,
+  POL_RECOVERY_MAX_TOUCHES,
 } from './constants';
 import type { PublicOwnerLeadSeq } from './sequence';
 import { rowToSeqLead } from './sequence-db';
+import { ensureOpenRecoverySchema } from './ensure-recovery-schema';
 
 export interface DueFollowUp extends PublicOwnerLeadSeq {
   domain: string;
   sourceUrl: string;
   notes: string | null;
-  /** 0 = A click, 1 = B open, 2 = C silent */
+  /** 0 = A click, 1 = B open, 2 = C silent, 3 = recovery open */
   priority: number;
+  recoveryTouchCount?: number;
 }
 
 export async function selectDueFollowUps(limit: number): Promise<DueFollowUp[]> {
   const n = Math.max(0, Math.floor(limit));
   if (n === 0) return [];
+  await ensureOpenRecoverySchema();
 
   const r = await sql`
     SELECT
       l.id, l.email, l.domain, l.source_url, l.notes, l.status, l.opted_out,
       l.sent_at, l.opened_at, l.clicked_at, l.signed_up_at,
       l.touch_count, l.last_touch_at, l.last_touch_kind,
-      l.next_touch_at, l.next_touch_kind, l.sequence_status
+      l.next_touch_at, l.next_touch_kind, l.sequence_status,
+      COALESCE(l.recovery_touch_count, 0)::int AS recovery_touch_count
     FROM public_owner_leads l
     WHERE l.status = 'sent'
       AND l.opted_out = false
       AND l.signed_up_at IS NULL
       AND COALESCE(l.sequence_status, 'active') = 'active'
-      AND l.next_touch_kind IN ('fu_click', 'fu_open', 'fu_silent')
       AND l.next_touch_at IS NOT NULL
       AND l.next_touch_at <= NOW()
-      AND GREATEST(COALESCE(l.touch_count, 0), 1) < (
-        CASE l.next_touch_kind
-          WHEN 'fu_click' THEN ${POL_FU_MAX_TOUCHES_CLICK}::int
-          WHEN 'fu_open' THEN ${POL_FU_MAX_TOUCHES_OPEN}::int
-          ELSE ${POL_FU_MAX_TOUCHES_SILENT}::int
-        END
+      AND (
+        (
+          l.next_touch_kind IN ('fu_click', 'fu_open', 'fu_silent')
+          AND GREATEST(COALESCE(l.touch_count, 0), 1) < (
+            CASE l.next_touch_kind
+              WHEN 'fu_click' THEN ${POL_FU_MAX_TOUCHES_CLICK}::int
+              WHEN 'fu_open' THEN ${POL_FU_MAX_TOUCHES_OPEN}::int
+              ELSE ${POL_FU_MAX_TOUCHES_SILENT}::int
+            END
+          )
+        )
+        OR (
+          l.next_touch_kind = 'fu_recovery'
+          AND COALESCE(l.recovery_status, '') = 'active'
+          AND COALESCE(l.recovery_touch_count, 0) < ${POL_RECOVERY_MAX_TOUCHES}::int
+        )
       )
       AND NOT EXISTS (
         SELECT 1 FROM email_unsubscribes u
@@ -53,7 +67,9 @@ export async function selectDueFollowUps(limit: number): Promise<DueFollowUp[]> 
       CASE l.next_touch_kind
         WHEN 'fu_click' THEN 0
         WHEN 'fu_open' THEN 1
-        ELSE 2
+        WHEN 'fu_silent' THEN 2
+        WHEN 'fu_recovery' THEN 3
+        ELSE 4
       END ASC,
       l.next_touch_at ASC
     LIMIT ${n}
@@ -67,7 +83,9 @@ export async function selectDueFollowUps(limit: number): Promise<DueFollowUp[]> 
       domain: String(row.domain || ''),
       sourceUrl: String(row.source_url || ''),
       notes: row.notes == null ? null : String(row.notes),
-      priority: k === 'fu_click' ? 0 : k === 'fu_open' ? 1 : 2,
+      priority:
+        k === 'fu_click' ? 0 : k === 'fu_open' ? 1 : k === 'fu_silent' ? 2 : 3,
+      recoveryTouchCount: Number(row.recovery_touch_count || 0),
     };
   });
 }

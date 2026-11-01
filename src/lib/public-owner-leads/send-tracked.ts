@@ -9,11 +9,12 @@ import {
 import { buildOutreachOptOutUrl } from './optout';
 import { buildOutreachActivateUrl } from './activate-link';
 import { applySequencePatch, loadSeqLead, markColdSentSequence } from './sequence-db';
-import { patchAfterFollowUpSent } from './sequence';
+import { patchAfterFollowUpSent, patchAfterRecoverySent } from './sequence';
 import {
   PUBLIC_OWNER_LEADS_CAMPAIGN,
   PUBLIC_OWNER_LEADS_EMAIL_TYPE,
 } from './constants';
+import { ensureOpenRecoverySchema } from './ensure-recovery-schema';
 
 function appBase(): string {
   return String(process.env.NEXT_PUBLIC_APP_URL || 'https://admin.delfincheckin.com').replace(
@@ -62,11 +63,14 @@ export async function sendTrackedOutreachLead(lead: {
   audience?: ColdEmailAudience;
   /** Tipo de toque (default cold). fu_* = follow-up sobre lead ya enviado. */
   touch?: OutreachTouch;
+  /** recovery_touch_count actual (antes del envío R1/R2). */
+  recoveryTouchCount?: number;
 }): Promise<{ ok: boolean; trackingId?: string; error?: string; retryable?: boolean }> {
   const email = lead.email.trim().toLowerCase();
   const audience: ColdEmailAudience = lead.audience || 'owner';
   const touch: OutreachTouch = lead.touch || 'cold';
   const isFollowUp = touch !== 'cold';
+  const recoveryStep = Math.max(0, Number(lead.recoveryTouchCount || 0));
   const optOutUrl = buildOutreachOptOutUrl(email, 'es');
   const signupRaw = signupUrlForLead(email);
   const buildFollowUp = (signupUrl: string) =>
@@ -78,6 +82,7 @@ export async function sendTrackedOutreachLead(lead: {
       signupUrl,
       audience,
       touch: touch as Exclude<OutreachTouch, 'cold'>,
+      recoveryStep: touch === 'fu_recovery' ? recoveryStep : undefined,
     });
   const subjectPreview = isFollowUp
     ? buildFollowUp(signupRaw).subject
@@ -182,9 +187,27 @@ export async function sendTrackedOutreachLead(lead: {
         WHERE id = ${lead.id}::uuid
       `;
       try {
-        const seq = await loadSeqLead(lead.id);
-        if (seq) {
-          await applySequencePatch(lead.id, patchAfterFollowUpSent(seq, touch));
+        if (touch === 'fu_recovery') {
+          await ensureOpenRecoverySchema();
+          const {
+            recoveryTouchCount: nextRec,
+            recoveryStatus: nextRecStatus,
+            ...seqPatch
+          } = patchAfterRecoverySent(recoveryStep);
+          await applySequencePatch(lead.id, seqPatch);
+          await sql`
+            UPDATE public_owner_leads
+            SET
+              recovery_touch_count = ${nextRec},
+              recovery_status = ${nextRecStatus},
+              updated_at = NOW()
+            WHERE id = ${lead.id}::uuid
+          `;
+        } else {
+          const seq = await loadSeqLead(lead.id);
+          if (seq) {
+            await applySequencePatch(lead.id, patchAfterFollowUpSent(seq, touch));
+          }
         }
       } catch (e) {
         console.warn('[outreach-send] fu sequence patch:', e instanceof Error ? e.message : e);

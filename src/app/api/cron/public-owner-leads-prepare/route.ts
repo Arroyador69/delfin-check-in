@@ -46,6 +46,20 @@ export async function GET(req: NextRequest) {
       extractLimit: 45,
     });
 
+    // Recovery opens: exhausted FU + abrieron + sin alta → programa R1 (drip).
+    let openRecovery: unknown = null;
+    try {
+      const { backfillOpenRecovery } = await import(
+        '@/lib/public-owner-leads/backfill-open-recovery'
+      );
+      openRecovery = await backfillOpenRecovery({
+        dryRun,
+        limit: dryRun ? 50 : 300,
+      });
+    } catch (e) {
+      openRecovery = { softFail: e instanceof Error ? e.message : String(e) };
+    }
+
     return NextResponse.json({
       success: true,
       wave: 'prepare',
@@ -53,6 +67,7 @@ export async function GET(req: NextRequest) {
       minQueuedTarget: PUBLIC_OWNER_LEADS_MIN_QUEUED,
       provinces,
       opendata,
+      openRecovery,
       flow: process.env.PUBLIC_OWNER_LEADS_FLOW || 'A+B+C',
       dryRun,
       outreach,

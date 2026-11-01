@@ -192,9 +192,16 @@ export async function stopSequenceByEmail(
         sequence_status = ${status},
         next_touch_at = NULL,
         next_touch_kind = NULL,
+        recovery_status = CASE
+          WHEN COALESCE(recovery_status, '') = 'active' THEN 'exhausted'
+          ELSE recovery_status
+        END,
         updated_at = NOW()
       WHERE LOWER(TRIM(email)) = ${normalized}
-        AND (sequence_status IS DISTINCT FROM ${status})
+        AND (
+          sequence_status IS DISTINCT FROM ${status}
+          OR next_touch_at IS NOT NULL
+        )
       RETURNING id
     `;
     return r.rowCount || 0;

@@ -13,6 +13,7 @@ import {
   PUBLIC_OWNER_LEADS_FU_DAILY_CAP,
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
   PUBLIC_OWNER_LEADS_MIN_QUEUED,
+  PUBLIC_OWNER_LEADS_RECOVERY_DAILY_CAP,
   PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL,
 } from './constants';
@@ -30,6 +31,7 @@ import type { OutreachTouch } from './template';
 import { sleep } from './fetch-html';
 import { hostSuggestsNonVacation } from './spain-vacation-filter';
 import type { OutreachAudience } from './spain-vacation-filter';
+import { backfillOpenRecovery } from './backfill-open-recovery';
 
 export type OutreachWave = 'morning' | 'afternoon' | 'evening' | 'night' | 'prepare';
 
@@ -97,7 +99,7 @@ async function countSentToday(): Promise<number> {
     WHERE COALESCE(last_touch_at, sent_at) >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
       AT TIME ZONE 'Europe/Madrid'
       AND (
-        last_touch_kind IN ('cold', 'fu_click', 'fu_open', 'fu_silent')
+        last_touch_kind IN ('cold', 'fu_click', 'fu_open', 'fu_silent', 'fu_recovery')
         OR (last_touch_kind IS NULL AND status = 'sent')
       )
   `;
@@ -124,7 +126,18 @@ async function countFuToday(): Promise<number> {
     FROM public_owner_leads
     WHERE last_touch_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
       AT TIME ZONE 'Europe/Madrid'
-      AND last_touch_kind IN ('fu_click', 'fu_open', 'fu_silent')
+      AND last_touch_kind IN ('fu_click', 'fu_open', 'fu_silent', 'fu_recovery')
+  `;
+  return Number(r.rows[0]?.n || 0);
+}
+
+async function countRecoveryToday(): Promise<number> {
+  const r = await sql`
+    SELECT COUNT(*)::int AS n
+    FROM public_owner_leads
+    WHERE last_touch_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+      AT TIME ZONE 'Europe/Madrid'
+      AND last_touch_kind = 'fu_recovery'
   `;
   return Number(r.rows[0]?.n || 0);
 }
@@ -615,6 +628,14 @@ export async function runDailyPublicOwnerLeads(opts?: {
     const room = Math.min(sendBudget, hardLeft, PUBLIC_OWNER_LEADS_WAVE_MAX);
     const coldToday = await countColdToday();
     const fuToday = await countFuToday();
+    let recoveryToday = await countRecoveryToday();
+    // Drip recovery: reprograma opens exhausted sin alta (antes de seleccionar due).
+    try {
+      const rec = await backfillOpenRecovery({ limit: 80 });
+      errors.push(`recovery:backfill=${rec.scheduled}/${rec.eligible}`);
+    } catch (e) {
+      errors.push(`recovery:backfill-fail:${e instanceof Error ? e.message : String(e)}`);
+    }
     // FU preferente hasta FU_CAP; si el soft cold ya se cumplió, FU puede usar todo el room.
     let fuRoom = Math.min(room, Math.max(0, PUBLIC_OWNER_LEADS_FU_DAILY_CAP - fuToday));
     if (coldToday >= PUBLIC_OWNER_LEADS_COLD_DAILY_CAP) {
@@ -622,11 +643,14 @@ export async function runDailyPublicOwnerLeads(opts?: {
     }
 
     let fuDueCount = 0;
-    // 1) Follow-ups primero (A click → B open → C silencio)
+    let recoverySentWave = 0;
+    // 1) Follow-ups primero (A click → B open → C silencio → recovery opens)
     try {
       const due = await selectDueFollowUps(fuRoom);
       fuDueCount = due.length;
-      errors.push(`fu:due=${due.length} room=${fuRoom} today=${fuToday}`);
+      errors.push(
+        `fu:due=${due.length} room=${fuRoom} today=${fuToday} recoveryToday=${recoveryToday}`
+      );
       for (const lead of due) {
         const email = lead.email.toLowerCase();
         const notes = String(lead.notes || '');
@@ -635,6 +659,11 @@ export async function runDailyPublicOwnerLeads(opts?: {
         else if (/hotel|hostal/i.test(notes)) audience = 'hotel';
         const touch = (lead.nextTouchKind || 'fu_open') as OutreachTouch;
         if (touch === 'cold') continue;
+        if (touch === 'fu_recovery') {
+          if (recoveryToday + recoverySentWave >= PUBLIC_OWNER_LEADS_RECOVERY_DAILY_CAP) {
+            continue;
+          }
+        }
         try {
           if (await isEmailSuppressed(email)) {
             skippedSuppressed++;
@@ -652,10 +681,12 @@ export async function runDailyPublicOwnerLeads(opts?: {
           source_url: lead.sourceUrl || '',
           audience,
           touch,
+          recoveryTouchCount: lead.recoveryTouchCount,
         });
         if (result.ok) {
           sent++;
           fuSent++;
+          if (touch === 'fu_recovery') recoverySentWave++;
         } else {
           failed++;
           if (result.error) errors.push(`fu:${email}: ${result.error}`);
@@ -667,6 +698,9 @@ export async function runDailyPublicOwnerLeads(opts?: {
           }
         }
         await sleep(PUBLIC_OWNER_LEADS_MIN_DELAY_MS);
+      }
+      if (recoverySentWave > 0) {
+        errors.push(`recovery:sent=${recoverySentWave}`);
       }
     } catch (e) {
       errors.push(`fu:select-fail:${e instanceof Error ? e.message : String(e)}`);

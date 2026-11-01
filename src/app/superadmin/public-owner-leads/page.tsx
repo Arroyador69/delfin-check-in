@@ -43,6 +43,13 @@ type FollowUpPanel = {
   exhausted?: number;
 };
 
+type OpenRecoveryPanel = {
+  due?: number;
+  scheduled?: number;
+  exhausted?: number;
+  eligibleBacklog?: number;
+};
+
 type Lead = {
   id: string;
   email: string;
@@ -121,6 +128,8 @@ export default function PublicOwnerLeadsAdminPage() {
   const [wavesStillRun, setWavesStillRun] = useState(true);
   const [paused, setPaused] = useState(false);
   const [followup, setFollowup] = useState<FollowUpPanel | null>(null);
+  const [openRecovery, setOpenRecovery] = useState<OpenRecoveryPanel | null>(null);
+  const [recoveryCap, setRecoveryCap] = useState(250);
   const [stats, setStats] = useState<Stats>({});
   const [today, setToday] = useState<Today>({});
   const [byDay, setByDay] = useState<DayRow[]>([]);
@@ -180,6 +189,8 @@ export default function PublicOwnerLeadsAdminPage() {
       setCheckinPaidGoal(Number(data.checkin_paid_goal || CHECKIN_PAID_DAILY_GOAL));
       setPaused(Boolean(data.paused));
       setFollowup(data.followup || null);
+      setOpenRecovery(data.open_recovery || null);
+      setRecoveryCap(Number(data.recovery_daily_cap || data.system?.recovery_cap || 250));
       setWavesStillRun(
         data.waves_still_run != null
           ? Boolean(data.waves_still_run)
@@ -568,7 +579,7 @@ export default function PublicOwnerLeadsAdminPage() {
                     Embudo follow-up (A click → B open → C silencio)
                   </h2>
                   <p className="mt-0.5 text-xs text-violet-800/80">
-                    Prioridad: due A → B → C; el resto del cupo y del tope diario lo rellena cold.
+                    Prioridad: A → B → C → recovery opens → cold hasta HARD.
                   </p>
                 </div>
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-violet-100 text-violet-900">
@@ -589,11 +600,34 @@ export default function PublicOwnerLeadsAdminPage() {
               </p>
             </section>
 
+            <section className="rounded-2xl border border-amber-200/70 bg-amber-50/50 p-5 shadow-sm">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h2 className="text-sm font-semibold text-amber-950">
+                    Recovery opens (interés sin alta)
+                  </h2>
+                  <p className="mt-0.5 text-xs text-amber-900/80">
+                    Exhausted FU + abrieron el mail + sin registro. R1 objeción SES → R2 última
+                    ayuda. Cupo {recoveryCap}/día.
+                  </p>
+                </div>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-950">
+                  Backlog elegible: {openRecovery?.eligibleBacklog ?? 0}
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <MetricCard label="Due recovery" value={openRecovery?.due} accent />
+                <MetricCard label="Programados" value={openRecovery?.scheduled} />
+                <MetricCard label="Recovery agotado" value={openRecovery?.exhausted} />
+                <MetricCard label="Elegibles" value={openRecovery?.eligibleBacklog} />
+              </div>
+            </section>
+
             <section className="rounded-2xl border border-sky-100 bg-sky-50/60 px-5 py-4 text-sm text-slate-700">
               <p className="font-semibold text-slate-900">Horario · sistema rentable (Europe/Madrid)</p>
               <p className="mt-1 leading-relaxed">
                 Prepare ~07:00 · oleadas {wavesPerDay}×{waveSize} · 08:00–20:30 · en cada oleada{' '}
-                <strong>FU primero</strong> (A→B→C); si no hay FU due suficiente,{' '}
+                <strong>FU A→B→C→recovery</strong>; si falta cupo,{' '}
                 <strong>cold rellena hasta {hardCap}</strong> (soft cold {coldCap}) · Telegram 12:00 ·
                 16:00 · 21:00 · delay {delaySec}s. Si Plan Check-in ≥{checkinPaidGoal}, se para el día.
               </p>
