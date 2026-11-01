@@ -128,6 +128,7 @@ export async function GET(req: NextRequest) {
         COUNT(*) FILTER (
           WHERE status = 'bounced'
             AND updated_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid') AT TIME ZONE 'Europe/Madrid'
+            AND COALESCE(last_error, '') !~* 'invalid-extract|invalid-email|css-garbage'
         )::int AS bounced_today,
         COUNT(*) FILTER (
           WHERE opened_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid') AT TIME ZONE 'Europe/Madrid'

@@ -548,7 +548,10 @@ export default function PublicOwnerLeadsAdminPage() {
                 <div className="mt-3 grid grid-cols-4 gap-2 text-center">
                   <MiniStat label="Abiertos" value={today.opened_today} />
                   <MiniStat label="Clicks" value={today.clicked_today} />
-                  <MiniStat label="Undelivered" value={today.bounced_today} />
+                  <MiniStat
+                    label="SMTP bounce hoy"
+                    value={today.bounced_today}
+                  />
                   <MiniStat label="Nuevos" value={today.discovered_today} />
                 </div>
               </div>

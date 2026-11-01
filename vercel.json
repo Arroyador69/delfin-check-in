@@ -76,7 +76,7 @@
     {"path":"/api/cron/email-sequences","schedule":"30 10 * * *"},
     {"path":"/api/cron/sync-zoho-bounces","schedule":"0 7 * * *"},
     {"path":"/api/cron/public-owner-leads-prepare","schedule":"0 6 * * *"},
-    {"path":"/api/cron/public-owner-leads-wave","schedule":"0,30 7-16 * * *"},
+    {"path":"/api/cron/public-owner-leads-wave","schedule":"0,30 7-19 * * *"},
     {"path":"/api/cron/captacion-progress-telegram","schedule":"5 10,11,14,15 * * *"},
     {"path":"/api/cron/captacion-evening-report","schedule":"0 20 * * *"}
   ]
