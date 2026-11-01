@@ -369,7 +369,12 @@ Gratis (sin tarjeta): formulario, panel, limpiezas y envío manual a SES Hospeda
 }
 
 /** Tipo de toque de la secuencia (alineado con `TouchKind` de sequence.ts). */
-export type OutreachTouch = 'cold' | 'fu_click' | 'fu_open' | 'fu_silent';
+export type OutreachTouch =
+  | 'cold'
+  | 'fu_click'
+  | 'fu_open'
+  | 'fu_silent'
+  | 'fu_recovery';
 
 export interface FollowUpEmailParams {
   toEmail: string;
@@ -380,6 +385,8 @@ export interface FollowUpEmailParams {
   signupUrl: string;
   audience?: ColdEmailAudience;
   touch: Exclude<OutreachTouch, 'cold'>;
+  /** 0 = R1, 1 = R2 (solo fu_recovery). */
+  recoveryStep?: number;
 }
 
 /**
@@ -409,7 +416,44 @@ export function buildFollowUpOutreachEmail(params: FollowUpEmailParams): {
   let paragraphs: string[];
   let ctaLabel: string;
 
-  if (touch === 'fu_click') {
+  if (touch === 'fu_recovery') {
+    const step = params.recoveryStep ?? 0;
+    if (step >= 1) {
+      subject = plural
+        ? `${domainLabel}: última ayuda con el check-in SES`
+        : `${domainLabel}: última ayuda con tu check-in SES`;
+      preheader = plural
+        ? 'Enlace directo · 1 minuto · si no os sirve, no os escribimos más por esto.'
+        : 'Enlace directo · 1 minuto · si no te sirve, no te escribimos más por esto.';
+      paragraphs = plural
+        ? [
+            `Última ayuda para ${domainLabel}: el enlace de abajo crea la cuenta en 1 minuto (gratis, sin tarjeta) y deja listo el check-in del huésped para SES Hospedajes.`,
+            `Si no os encaja, no pasa nada: no os volveremos a escribir por este tema.`,
+          ]
+        : [
+            `Última ayuda para ${domainLabel}: el enlace de abajo crea tu cuenta en 1 minuto (gratis, sin tarjeta) y deja listo el check-in del huésped para SES Hospedajes.`,
+            `Si no te encaja, no pasa nada: no te volveré a escribir por este tema.`,
+          ];
+      ctaLabel = plural ? 'Crear cuenta ahora' : 'Crear mi cuenta ahora';
+    } else {
+      subject = plural
+        ? `${domainLabel}: abristeis el mail — el parte SES sigue siendo obligatorio`
+        : `${domainLabel}: abriste el mail — el parte SES sigue siendo obligatorio`;
+      preheader = plural
+        ? 'Sin tarjeta. En 1 minuto tenéis el enlace del huésped. Muchos se quedan a un clic.'
+        : 'Sin tarjeta. En 1 minuto tienes el enlace del huésped. Muchos se quedan a un clic.';
+      paragraphs = plural
+        ? [
+            `Abristeis un correo sobre Delfín Check-in para ${domainLabel}. Suele pasar: se mira, se deja para después… y el parte de viajeros a SES Hospedajes sigue siendo obligatorio en cada llegada.`,
+            `En 1 minuto (gratis, sin tarjeta) creáis la cuenta y tenéis el enlace del huésped. El envío automático del parte es opcional después (Plan Check-in ~2€/mes).`,
+          ]
+        : [
+            `Abriste un correo sobre Delfín Check-in para ${domainLabel}. Suele pasar: se mira, se deja para después… y el parte de viajeros a SES Hospedajes sigue siendo obligatorio en cada llegada.`,
+            `En 1 minuto (gratis, sin tarjeta) creas la cuenta y tienes el enlace del huésped. El envío automático del parte es opcional después (Plan Check-in ~2€/mes).`,
+          ];
+      ctaLabel = plural ? 'Resolverlo en 1 minuto' : 'Resolverlo en 1 minuto';
+    }
+  } else if (touch === 'fu_click') {
     subject = `${domainLabel}: ${plural ? 'os faltó' : 'te faltó'} un minuto`;
     preheader = plural
       ? 'Visteis el registro de Delfín Check-in: queda 1 minuto para tener el enlace del huésped.'

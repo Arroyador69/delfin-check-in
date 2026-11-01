@@ -17,9 +17,11 @@ import {
   POL_FU_MAX_TOUCHES_SILENT,
   POL_FU_OPEN_DELAY_DAYS,
   POL_FU_SILENT_DELAY_DAYS,
+  POL_RECOVERY_MAX_TOUCHES,
+  POL_RECOVERY_SECOND_DELAY_DAYS,
 } from './constants';
 
-export type TouchKind = 'cold' | 'fu_click' | 'fu_open' | 'fu_silent';
+export type TouchKind = 'cold' | 'fu_click' | 'fu_open' | 'fu_silent' | 'fu_recovery';
 
 export type SequenceStatus =
   | 'active'
@@ -81,6 +83,7 @@ function isStopped(lead: Pick<PublicOwnerLeadSeq, 'sequenceStatus'>): boolean {
 export function maxTouchesFor(kind: TouchKind | null | undefined): number {
   if (kind === 'fu_click') return POL_FU_MAX_TOUCHES_CLICK;
   if (kind === 'fu_open') return POL_FU_MAX_TOUCHES_OPEN;
+  if (kind === 'fu_recovery') return POL_RECOVERY_MAX_TOUCHES;
   return POL_FU_MAX_TOUCHES_SILENT;
 }
 
@@ -93,12 +96,13 @@ export function isSequenceActive(lead: PublicOwnerLeadSeq): boolean {
   return true;
 }
 
-/** Prioridad de envío FU: menor = antes (A click, B open, C silencio). */
+/** Prioridad de envío FU: menor = antes (A click, B open, C silencio, R recovery). */
 export function followUpPriority(lead: PublicOwnerLeadSeq): number {
   const kind = lead.nextTouchKind;
   if (kind === 'fu_click') return 0;
   if (kind === 'fu_open') return 1;
   if (kind === 'fu_silent') return 2;
+  if (kind === 'fu_recovery') return 3;
   if (lead.clickedAt) return 0;
   if (lead.openedAt) return 1;
   return 2;
@@ -181,6 +185,14 @@ export function patchAfterFollowUpSent(
   kind: TouchKind,
   at = new Date().toISOString(),
 ): SequencePatch {
+  // Recovery R1/R2 se gestiona en patchAfterRecoverySent (recovery_touch_count).
+  if (kind === 'fu_recovery') {
+    return {
+      lastTouchAt: at,
+      lastTouchKind: 'fu_recovery',
+    };
+  }
+
   const touches = (lead.touchCount || 1) + 1;
   const base: SequencePatch = {
     touchCount: touches,
@@ -198,6 +210,36 @@ export function patchAfterFollowUpSent(
   }
 
   return { ...base, ...CLEAR_NEXT, sequenceStatus: 'exhausted' };
+}
+
+/**
+ * Tras enviar recovery R1/R2.
+ * Devuelve también recoveryTouchCount / recoveryStatus para persistir aparte.
+ */
+export function patchAfterRecoverySent(
+  recoveryTouchCountBefore: number,
+  at = new Date().toISOString(),
+): SequencePatch & { recoveryTouchCount: number; recoveryStatus: 'active' | 'exhausted' } {
+  const nextCount = recoveryTouchCountBefore + 1;
+  if (nextCount < POL_RECOVERY_MAX_TOUCHES) {
+    return {
+      lastTouchAt: at,
+      lastTouchKind: 'fu_recovery',
+      nextTouchAt: addDaysIso(at, POL_RECOVERY_SECOND_DELAY_DAYS),
+      nextTouchKind: 'fu_recovery',
+      sequenceStatus: 'active',
+      recoveryTouchCount: nextCount,
+      recoveryStatus: 'active',
+    };
+  }
+  return {
+    lastTouchAt: at,
+    lastTouchKind: 'fu_recovery',
+    ...CLEAR_NEXT,
+    sequenceStatus: 'exhausted',
+    recoveryTouchCount: nextCount,
+    recoveryStatus: 'exhausted',
+  };
 }
 
 /** Aplica un patch en memoria (merge; `null` limpia). */

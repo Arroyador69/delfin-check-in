@@ -18,6 +18,7 @@ import {
   PUBLIC_OWNER_LEADS_FU_DAILY_CAP,
   PUBLIC_OWNER_LEADS_MIN_QUEUED,
   PUBLIC_OWNER_LEADS_PROGRESS_EVERY,
+  PUBLIC_OWNER_LEADS_RECOVERY_DAILY_CAP,
   PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_LEADS_WAVES_PER_DAY,
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
@@ -27,6 +28,7 @@ import {
 import { syncZohoBounces } from '@/lib/zoho-bounce-sync';
 import { getOutreachProviderInfo } from '@/lib/public-owner-leads/send-smtp';
 import { followUpCounts } from '@/lib/public-owner-leads/select-followups';
+import { openRecoveryCounts } from '@/lib/public-owner-leads/backfill-open-recovery';
 
 async function requireSuperAdmin(req: NextRequest) {
   const authToken = req.cookies.get('auth_token')?.value;
@@ -317,6 +319,13 @@ export async function GET(req: NextRequest) {
       fu = null;
     }
 
+    let openRecovery: Awaited<ReturnType<typeof openRecoveryCounts>> | null = null;
+    try {
+      openRecovery = await openRecoveryCounts();
+    } catch {
+      openRecovery = null;
+    }
+
     const todayRow = (today.rows[0] || {}) as Record<string, number>;
 
     return NextResponse.json({
@@ -326,6 +335,7 @@ export async function GET(req: NextRequest) {
       daily_hard_cap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
       cold_daily_cap: PUBLIC_OWNER_LEADS_COLD_DAILY_CAP,
       fu_daily_cap: PUBLIC_OWNER_LEADS_FU_DAILY_CAP,
+      recovery_daily_cap: PUBLIC_OWNER_LEADS_RECOVERY_DAILY_CAP,
       afternoon_max: PUBLIC_OWNER_LEADS_WAVE_MAX,
       wave_max: PUBLIC_OWNER_LEADS_WAVE_MAX,
       min_queued: PUBLIC_OWNER_LEADS_MIN_QUEUED,
@@ -345,19 +355,21 @@ export async function GET(req: NextRequest) {
         ? 'Captación PAUSADA — PUBLIC_OWNER_LEADS_PAUSED=1'
         : null,
       schedule_hint:
-        '08:00–17:30 Madrid · 65/oleada · FU primero (A→B→C) · cold 300 · FU 1000 · stop a 10 Plan Check-in · Telegram 12:00 + 16:00 + 21:00',
+        '08:00–20:30 Madrid · FU A→B→C→recovery opens → cold rellena HARD · stop a 10 Plan Check-in · Telegram 12/16/21',
       system: {
-        model: 'cold+followup',
+        model: 'cold+followup+open-recovery',
         hard_cap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
         cold_cap: PUBLIC_OWNER_LEADS_COLD_DAILY_CAP,
         fu_cap: PUBLIC_OWNER_LEADS_FU_DAILY_CAP,
-        priority: 'fu_click → fu_open → fu_silent → cold',
+        recovery_cap: PUBLIC_OWNER_LEADS_RECOVERY_DAILY_CAP,
+        priority: 'fu_click → fu_open → fu_silent → fu_recovery → cold',
         goals: {
           checkin_paid: PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL,
           onboardings: PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
         },
       },
       followup: fu,
+      open_recovery: openRecovery,
       outreach_provider: getOutreachProviderInfo(),
       stats: { ...st, open_rate_pct: openRate, click_rate_pct: clickRate, signup_rate_pct: signupRate },
       today: {

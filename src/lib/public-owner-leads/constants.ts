@@ -55,8 +55,29 @@ export const PUBLIC_OWNER_LEADS_DAILY_HARD_CAP = 1300;
  */
 export const PUBLIC_OWNER_LEADS_COLD_DAILY_CAP = 300;
 
-/** Tope preferente follow-ups (A→B→C). El resto del HARD lo absorbe cold. */
+/** Tope preferente follow-ups (A→B→C + recovery opens). El resto del HARD lo absorbe cold. */
 export const PUBLIC_OWNER_LEADS_FU_DAILY_CAP = 1000;
+
+/**
+ * Cupo diario recovery (subset del FU_CAP): opens que agotaron A/B/C sin alta.
+ * Prioridad en oleada: A → B → C → recovery → cold.
+ */
+export const PUBLIC_OWNER_LEADS_RECOVERY_DAILY_CAP = 250;
+
+/**
+ * Enfriamiento tras el último FU antes de recovery.
+ * 12h: no reescribir la misma tarde; el prepare de mañana ya puede programar R1.
+ */
+export const POL_RECOVERY_COOLDOWN_HOURS = 12;
+
+/** R2: días tras R1 si sigue sin alta. */
+export const POL_RECOVERY_SECOND_DELAY_DAYS = 5;
+
+/** Máx. toques recovery (R1 + R2). */
+export const POL_RECOVERY_MAX_TOUCHES = 2;
+
+/** Cuántos exhausted+open programar por prepare/oleada (drip). */
+export const POL_RECOVERY_BACKFILL_BATCH = 300;
 
 /** Nº de oleadas de envío/día para llegar al hard cap (20 × 65). */
 export const PUBLIC_OWNER_LEADS_WAVES_PER_DAY = 20;
