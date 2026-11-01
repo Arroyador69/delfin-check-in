@@ -564,18 +564,7 @@ export async function runDailyPublicOwnerLeads(opts?: {
       LIMIT ${sendBudget}
     `;
 
-    /** Dominios ya contactados (nunca 2 mails al mismo alojamiento). */
-    const domainsSent = new Set<string>();
-    const already = await sql`
-      SELECT DISTINCT lower(domain) AS d
-      FROM public_owner_leads
-      WHERE status = 'sent' AND domain IS NOT NULL AND domain <> ''
-    `;
-    for (const r of already.rows) {
-      const d = String(r.d || '').replace(/^www\./i, '');
-      if (d) domainsSent.add(d);
-    }
-    /** Emails ya enviados (nunca reenviar el mismo). */
+    /** Emails ya enviados (nunca reenviar el mismo). Mismo dominio OK (varios contactos). */
     const emailsSent = new Set<string>();
     const alreadyEmail = await sql`
       SELECT lower(email) AS e FROM public_owner_leads WHERE status = 'sent'
@@ -597,17 +586,6 @@ export async function runDailyPublicOwnerLeads(opts?: {
           UPDATE public_owner_leads
           SET status = 'skipped', updated_at = NOW(),
               notes = COALESCE(notes, '') || ' | skip:email-already-sent'
-          WHERE id = ${row.id}::uuid
-        `;
-        continue;
-      }
-
-      if (domain && domainsSent.has(domain)) {
-        skippedSuppressed++;
-        await sql`
-          UPDATE public_owner_leads
-          SET status = 'skipped', updated_at = NOW(),
-              notes = COALESCE(notes, '') || ' | skip:domain-already-sent'
           WHERE id = ${row.id}::uuid
         `;
         continue;

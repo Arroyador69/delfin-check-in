@@ -182,15 +182,15 @@ export async function refillQueuedStock(opts?: {
     LIMIT ${extractLimit}
   `;
 
+  // Solo dedupe por email (nunca reenviar al mismo). Mismo dominio OK
+  // (reservas@ / info@ / comercial@ del mismo hotel son leads distintos).
   const usedEmail = new Set<string>();
-  const usedDomain = new Set<string>();
   const already = await sql`
-    SELECT lower(email) AS e, lower(regexp_replace(coalesce(domain,''), '^www\\.', '')) AS d
+    SELECT lower(email) AS e
     FROM public_owner_leads WHERE status IN ('sent', 'queued', 'new', 'bounced')
   `;
   for (const r of already.rows) {
     if (r.e) usedEmail.add(String(r.e));
-    if (r.d) usedDomain.add(String(r.d));
   }
 
   for (const row of pending.rows) {
@@ -223,7 +223,7 @@ export async function refillQueuedStock(opts?: {
         if (!isPlausiblePublicEmail(email) || scoreEmailForSource(email, lead.source_url) < 0) {
           continue;
         }
-        if (usedEmail.has(email) || (domain && usedDomain.has(domain))) continue;
+        if (usedEmail.has(email)) continue;
         const aud = lead.audience || 'owner';
         const note = `refill:${aud}:${new Date().toISOString().slice(0, 10)}`;
         const ins = await sql`
@@ -236,7 +236,6 @@ export async function refillQueuedStock(opts?: {
           found++;
           extracted++;
           usedEmail.add(email);
-          if (domain) usedDomain.add(domain);
         }
       }
       await sql`

@@ -270,7 +270,7 @@ export async function importOpenDataSource(opts: {
         web = `https://${host}`;
         domain = host.replace(/^www\./, '');
       }
-      if (!domain || usedDomain.has(domain)) {
+      if (!domain) {
         skipped++;
       } else {
         const ins = await sql`
