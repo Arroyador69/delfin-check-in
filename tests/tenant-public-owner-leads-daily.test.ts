@@ -13,6 +13,7 @@ import {
   PUBLIC_OWNER_LEADS_TG_AFTERNOON_SLOT,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
   PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
+  PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL,
 } from '../src/lib/public-owner-leads/constants';
 import { isBlockedOutreachHost } from '../src/lib/public-owner-leads/blocked-hosts';
 import { buildColdOutreachEmail } from '../src/lib/public-owner-leads/template';
@@ -23,17 +24,20 @@ import {
 } from '../src/lib/public-owner-leads/wave-schedule';
 
 describe('public-owner-leads daily campaign', () => {
-  it('10 oleadas ×50 = tope 500 (350 cold + 150 FU); cola 1000; delay ≥1.5s; meta 20; 3 Telegram/día', () => {
-    expect(PUBLIC_OWNER_LEADS_WAVE_MAX).toBe(50);
-    expect(PUBLIC_OWNER_LEADS_DAILY_TARGET).toBe(50);
-    expect(PUBLIC_OWNER_LEADS_WAVES_PER_DAY).toBe(10);
-    expect(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP).toBe(500);
+  it('20 oleadas ×65 = tope 1300 (300 cold + 1000 FU); cola 1000; delay ≥1.5s; meta 10 Check-in; 3 Telegram/día', () => {
+    expect(PUBLIC_OWNER_LEADS_WAVE_MAX).toBe(65);
+    expect(PUBLIC_OWNER_LEADS_DAILY_TARGET).toBe(65);
+    expect(PUBLIC_OWNER_LEADS_WAVES_PER_DAY).toBe(20);
+    expect(PUBLIC_OWNER_LEADS_DAILY_HARD_CAP).toBe(1300);
+    expect(PUBLIC_OWNER_LEADS_COLD_DAILY_CAP).toBe(300);
+    expect(PUBLIC_OWNER_LEADS_FU_DAILY_CAP).toBe(1000);
     expect(PUBLIC_OWNER_LEADS_COLD_DAILY_CAP + PUBLIC_OWNER_LEADS_FU_DAILY_CAP).toBe(
       PUBLIC_OWNER_LEADS_DAILY_HARD_CAP
     );
     expect(PUBLIC_OWNER_LEADS_MIN_QUEUED).toBe(1000);
     expect(PUBLIC_OWNER_SIGNUPS_DAILY_GOAL).toBe(20);
     expect(PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL).toBe(20);
+    expect(PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL).toBe(10);
     expect(PUBLIC_OWNER_LEADS_WAVE_MAX * PUBLIC_OWNER_LEADS_WAVES_PER_DAY).toBe(
       PUBLIC_OWNER_LEADS_DAILY_HARD_CAP
     );

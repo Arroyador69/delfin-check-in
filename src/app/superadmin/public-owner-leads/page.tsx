@@ -20,11 +20,27 @@ type Stats = {
 
 type Today = {
   sent_today?: number;
+  cold_today?: number;
+  fu_today?: number;
+  fu_click_today?: number;
+  fu_open_today?: number;
+  fu_silent_today?: number;
   bounced_today?: number;
   opened_today?: number;
   clicked_today?: number;
   signed_up_today?: number;
   discovered_today?: number;
+};
+
+type FollowUpPanel = {
+  dueClick?: number;
+  dueOpen?: number;
+  dueSilent?: number;
+  scheduledClick?: number;
+  scheduledOpen?: number;
+  scheduledSilent?: number;
+  stoppedSale?: number;
+  exhausted?: number;
 };
 
 type Lead = {
@@ -60,9 +76,9 @@ type IntakeRow = {
   created_at: string;
 };
 
-/** Meta de negocio: onboardings completados / día (no solo altas/clic). */
-const SIGNUP_DAILY_GOAL = 20;
+/** Metas de negocio (cold+FU → completed → Plan Check-in). */
 const ONBOARDING_DAILY_GOAL = 20;
+const CHECKIN_PAID_DAILY_GOAL = 10;
 
 function fmt(d: string | null | undefined): string {
   if (!d) return '—';
@@ -89,16 +105,22 @@ export default function PublicOwnerLeadsAdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [tableReady, setTableReady] = useState(false);
   const [migrationHint, setMigrationHint] = useState<string | null>(null);
-  const [dailyTarget, setDailyTarget] = useState(50);
-  const [hardCap, setHardCap] = useState(1000);
+  const [dailyTarget, setDailyTarget] = useState(65);
+  const [hardCap, setHardCap] = useState(1300);
+  const [coldCap, setColdCap] = useState(300);
+  const [fuCap, setFuCap] = useState(1000);
   const [wavesPerDay, setWavesPerDay] = useState(20);
   const [delayMs, setDelayMs] = useState(1800);
   const [scheduleHint, setScheduleHint] = useState(
-    '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram 12:00 + 16:00 + 21:00'
+    '08:00–17:30 Madrid · 65/oleada · FU primero · stop a 10 Plan Check-in · Telegram 12:00 + 16:00 + 21:00'
   );
   const [reserveReady, setReserveReady] = useState(0);
   const [onboardingsToday, setOnboardingsToday] = useState(0);
+  const [checkinPaidToday, setCheckinPaidToday] = useState(0);
+  const [checkinPaidGoal, setCheckinPaidGoal] = useState(CHECKIN_PAID_DAILY_GOAL);
   const [wavesStillRun, setWavesStillRun] = useState(true);
+  const [paused, setPaused] = useState(false);
+  const [followup, setFollowup] = useState<FollowUpPanel | null>(null);
   const [stats, setStats] = useState<Stats>({});
   const [today, setToday] = useState<Today>({});
   const [byDay, setByDay] = useState<DayRow[]>([]);
@@ -140,18 +162,24 @@ export default function PublicOwnerLeadsAdminPage() {
       }
       setTableReady(Boolean(data.table_ready));
       setMigrationHint(data.table_ready ? null : data.message || null);
-      setDailyTarget(Number(data.wave_max || data.daily_target || 50));
-      setHardCap(Number(data.daily_hard_cap || 1000));
+      setDailyTarget(Number(data.wave_max || data.daily_target || 65));
+      setHardCap(Number(data.daily_hard_cap || 1300));
+      setColdCap(Number(data.cold_daily_cap || data.system?.cold_cap || 300));
+      setFuCap(Number(data.fu_daily_cap || data.system?.fu_cap || 1000));
       setWavesPerDay(Number(data.waves_per_day || 20));
       setDelayMs(Number(data.delay_ms || 1800));
       setScheduleHint(
         String(
           data.schedule_hint ||
-            '08:00–17:30 Madrid · cada 30 min · 50/oleada · Telegram 12:00 + 16:00 + 21:00'
+            '08:00–17:30 Madrid · 65/oleada · FU primero · stop a 10 Plan Check-in · Telegram 12:00 + 16:00 + 21:00'
         )
       );
       setReserveReady(Number(data.reserve_ready || 0));
       setOnboardingsToday(Number(data.onboardings_today || 0));
+      setCheckinPaidToday(Number(data.checkin_paid_today || 0));
+      setCheckinPaidGoal(Number(data.checkin_paid_goal || CHECKIN_PAID_DAILY_GOAL));
+      setPaused(Boolean(data.paused));
+      setFollowup(data.followup || null);
       setWavesStillRun(
         data.waves_still_run != null
           ? Boolean(data.waves_still_run)
@@ -235,16 +263,33 @@ export default function PublicOwnerLeadsAdminPage() {
   }
 
   const sentToday = Number(today.sent_today || 0);
+  const coldToday = Number(today.cold_today || 0);
+  const fuToday = Number(today.fu_today || 0);
   const signupsToday = Number(today.signed_up_today || 0);
   const sendPct = Math.min(100, Math.round((sentToday / Math.max(hardCap, 1)) * 100));
+  const coldPct = Math.min(100, Math.round((coldToday / Math.max(coldCap, 1)) * 100));
+  const fuPct = Math.min(100, Math.round((fuToday / Math.max(fuCap, 1)) * 100));
   const signupPct = Math.min(
     100,
     Math.round((onboardingsToday / Math.max(ONBOARDING_DAILY_GOAL, 1)) * 100)
   );
+  const checkinPct = Math.min(
+    100,
+    Math.round((checkinPaidToday / Math.max(checkinPaidGoal, 1)) * 100)
+  );
   const signupGoalMet = onboardingsToday >= ONBOARDING_DAILY_GOAL;
-  const waveSize = dailyTarget; // 50 por oleada (Zoho-safe)
-  const queueTarget = hardCap; // recámara = tope día (1000)
+  const checkinGoalMet = checkinPaidToday >= checkinPaidGoal;
+  const waveSize = dailyTarget; // 65 por oleada
+  const queueTarget = hardCap; // recámara ≈ tope día (1300)
   const delaySec = Math.round((delayMs / 1000) * 10) / 10;
+  const dueTotal =
+    Number(followup?.dueClick || 0) +
+    Number(followup?.dueOpen || 0) +
+    Number(followup?.dueSilent || 0);
+  const scheduledTotal =
+    Number(followup?.scheduledClick || 0) +
+    Number(followup?.scheduledOpen || 0) +
+    Number(followup?.scheduledSilent || 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-sky-50/40">
@@ -257,12 +302,19 @@ export default function PublicOwnerLeadsAdminPage() {
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
               Captación propietarios
             </h1>
-            <p className="mt-1 text-slate-600 max-w-2xl text-[15px] leading-relaxed">
-              Meta <strong className="text-slate-900">{ONBOARDING_DAILY_GOAL} onboardings completos / día</strong>{' '}
-              · tope <strong className="text-slate-900">{hardCap} mails / día</strong> en {wavesPerDay}{' '}
-              oleadas ×{waveSize} ({scheduleHint}) · delay {delaySec}s · Telegram 12:00 · 16:00 · 21:00 · si
-              onboardings ≥{ONBOARDING_DAILY_GOAL} se para · cola ≥{queueTarget}. Cola ahora:{' '}
-              <strong className="text-slate-900">{reserveReady}</strong>.
+            <p className="mt-1 text-slate-600 max-w-3xl text-[15px] leading-relaxed">
+              Sistema <strong className="text-slate-900">cold + follow-up (A→B→C)</strong> · tope{' '}
+              <strong className="text-slate-900">{hardCap}/día</strong> (
+              <strong className="text-slate-900">{coldCap} cold</strong> +{' '}
+              <strong className="text-slate-900">{fuCap} FU</strong>) · FU primero ·{' '}
+              <strong className="text-slate-900">meta #{checkinPaidGoal} Plan Check-in / día</strong>{' '}
+              (onboardings {ONBOARDING_DAILY_GOAL} secundario) · {scheduleHint} · cola{' '}
+              <strong className="text-slate-900">{reserveReady}</strong>
+              {paused ? (
+                <span className="ml-2 inline-flex items-center rounded-md bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-900">
+                  PAUSADO
+                </span>
+              ) : null}
             </p>
             {outreachProvider && (
               <p
@@ -307,11 +359,11 @@ export default function PublicOwnerLeadsAdminPage() {
             </button>
             <button
               type="button"
-              disabled={busy || !tableReady || signupGoalMet}
+              disabled={busy || !tableReady || checkinGoalMet || paused}
               onClick={() => {
                 if (
                   !confirm(
-                    `¿Enviar hasta ${waveSize} emails ahora? (delay ${delaySec}s · Zoho-safe · tope día ${hardCap})`
+                    `¿Enviar hasta ${waveSize} emails ahora? (FU primero · delay ${delaySec}s · tope ${hardCap}: ${coldCap} cold + ${fuCap} FU · meta ${checkinPaidGoal} Plan Check-in)`
                   )
                 )
                   return;
@@ -344,7 +396,7 @@ export default function PublicOwnerLeadsAdminPage() {
           <p className="text-slate-500 text-sm">Cargando métricas…</p>
         ) : (
           <>
-            <section className="grid md:grid-cols-3 gap-4">
+            <section className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
               <div
                 className={`rounded-2xl border p-5 shadow-sm ${
                   reserveReady >= queueTarget
@@ -379,40 +431,26 @@ export default function PublicOwnerLeadsAdminPage() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-slate-600">
-                  Mails en cola listos para enviar (no se reinicia cada día). En cola ahora:{' '}
-                  <strong>{stats.queued ?? 0}</strong>
-                  {(stats.new_count ?? 0) > 0 ? ` · new ${stats.new_count}` : ''}. «Nuevos hoy» ≠
-                  stock: solo leads creados hoy ({today.discovered_today ?? 0}).
+                  Stock para cold. En cola: <strong>{stats.queued ?? 0}</strong>
+                  {(stats.new_count ?? 0) > 0 ? ` · new ${stats.new_count}` : ''}. Nuevos hoy:{' '}
+                  {today.discovered_today ?? 0}.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
                 <div className="flex justify-between items-baseline gap-2">
-                  <h2 className="text-sm font-semibold text-slate-800">
-                    Onboardings completos hoy (KPI)
-                  </h2>
+                  <h2 className="text-sm font-semibold text-slate-800">Onboardings hoy</h2>
                   <span
                     className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      signupsToday > SIGNUP_DAILY_GOAL
-                        ? 'bg-emerald-200 text-emerald-900'
-                        : signupGoalMet
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-900'
+                      signupGoalMet ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
                     }`}
                   >
-                    {onboardingsToday > ONBOARDING_DAILY_GOAL
-                      ? `¡Más de ${ONBOARDING_DAILY_GOAL}!`
-                      : signupGoalMet
-                        ? 'Meta OK — cola para mañana'
-                        : 'Por debajo → oleadas todo el día'}
+                    {signupGoalMet ? 'Meta OK' : 'En curso'}
                   </span>
                 </div>
                 <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
                   {onboardingsToday}
-                  <span className="text-lg text-slate-400 font-medium">
-                    {' '}
-                    / {ONBOARDING_DAILY_GOAL}
-                  </span>
+                  <span className="text-lg text-slate-400 font-medium"> / {ONBOARDING_DAILY_GOAL}</span>
                 </p>
                 <div className="mt-3 h-2.5 rounded-full bg-slate-100 overflow-hidden">
                   <div
@@ -421,15 +459,42 @@ export default function PublicOwnerLeadsAdminPage() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
-                  {wavesStillRun
-                    ? `Aún <${ONBOARDING_DAILY_GOAL} onboardings → cada ~30 min hasta ${waveSize} mails (altas hoy: ${signupsToday}).`
-                    : `Ya hay ${ONBOARDING_DAILY_GOAL}+ onboardings → no más envíos hoy; cola para mañana.`}
+                  Altas atribuidas hoy: {signupsToday}. Oleadas paran al llegar a{' '}
+                  {checkinPaidGoal} Plan Check-in (pago), no a esta meta.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-5 shadow-sm">
+                <div className="flex justify-between items-baseline gap-2">
+                  <h2 className="text-sm font-semibold text-slate-800">Plan Check-in hoy</h2>
+                  <span
+                    className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      checkinGoalMet
+                        ? 'bg-emerald-200 text-emerald-900'
+                        : 'bg-white text-emerald-900 ring-1 ring-emerald-200'
+                    }`}
+                  >
+                    {checkinGoalMet ? '¡Meta!' : 'Meta rentable'}
+                  </span>
+                </div>
+                <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-emerald-950">
+                  {checkinPaidToday}
+                  <span className="text-lg text-slate-400 font-medium"> / {checkinPaidGoal}</span>
+                </p>
+                <div className="mt-3 h-2.5 rounded-full bg-white/80 overflow-hidden ring-1 ring-emerald-100">
+                  <div
+                    className={`h-full rounded-full transition-all ${checkinGoalMet ? 'bg-emerald-600' : 'bg-teal-500'}`}
+                    style={{ width: `${checkinPct}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-slate-600">
+                  Tenants con plan checkin/standard/pro actualizados hoy. Objetivo ~{checkinPaidGoal}/día.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
                 <div className="flex justify-between items-baseline gap-2">
-                  <h2 className="text-sm font-semibold text-slate-800">Emails outreach hoy</h2>
+                  <h2 className="text-sm font-semibold text-slate-800">Emails hoy</h2>
                   <span className="text-xs font-semibold text-slate-500">
                     {wavesPerDay}×{waveSize} · tope {hardCap}
                   </span>
@@ -439,27 +504,91 @@ export default function PublicOwnerLeadsAdminPage() {
                   <span className="text-lg text-slate-400 font-medium"> / {hardCap}</span>
                 </p>
                 <div className="mt-3 h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-slate-700/80 transition-all" style={{ width: `${sendPct}%` }} />
+                  <div
+                    className="h-full rounded-full bg-slate-700/80 transition-all"
+                    style={{ width: `${sendPct}%` }}
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-slate-50 ring-1 ring-slate-100 px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      Cold
+                    </p>
+                    <p className="text-lg font-semibold tabular-nums text-slate-900">
+                      {coldToday}
+                      <span className="text-sm text-slate-400 font-medium"> / {coldCap}</span>
+                    </p>
+                    <div className="mt-1.5 h-1.5 rounded-full bg-white overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-slate-500"
+                        style={{ width: `${coldPct}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-violet-50 ring-1 ring-violet-100 px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">
+                      Follow-up
+                    </p>
+                    <p className="text-lg font-semibold tabular-nums text-violet-950">
+                      {fuToday}
+                      <span className="text-sm text-violet-400 font-medium"> / {fuCap}</span>
+                    </p>
+                    <div className="mt-1.5 h-1.5 rounded-full bg-white overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-violet-500"
+                        style={{ width: `${fuPct}%` }}
+                      />
+                    </div>
+                    <p className="mt-1 text-[10px] text-violet-700/80">
+                      A {today.fu_click_today ?? 0} · B {today.fu_open_today ?? 0} · C{' '}
+                      {today.fu_silent_today ?? 0}
+                    </p>
+                  </div>
                 </div>
                 <div className="mt-3 grid grid-cols-4 gap-2 text-center">
                   <MiniStat label="Abiertos" value={today.opened_today} />
                   <MiniStat label="Clicks" value={today.clicked_today} />
                   <MiniStat label="Undelivered" value={today.bounced_today} />
-                  <MiniStat label="Nuevos hoy" value={today.discovered_today} />
+                  <MiniStat label="Nuevos" value={today.discovered_today} />
                 </div>
-                <p className="mt-3 text-xs text-slate-500">
-                  Zoho-safe: {waveSize}/oleada · delay {delaySec}s · Telegram solo 12:00 + 16:00 + cierre
-                  21:00 · cron todo el día hasta tope o meta 20.
-                </p>
               </div>
             </section>
 
+            <section className="rounded-2xl border border-violet-200/70 bg-violet-50/40 p-5 shadow-sm">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h2 className="text-sm font-semibold text-violet-950">
+                    Embudo follow-up (A click → B open → C silencio)
+                  </h2>
+                  <p className="mt-0.5 text-xs text-violet-800/80">
+                    Prioridad en cada oleada: due A, luego B, luego C; el resto del cupo a cold.
+                  </p>
+                </div>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-violet-100 text-violet-900">
+                  Due ahora: {dueTotal} · Programados: {scheduledTotal}
+                </span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <MetricCard label="Due A (click)" value={followup?.dueClick} accent />
+                <MetricCard label="Due B (open)" value={followup?.dueOpen} />
+                <MetricCard label="Due C (silencio)" value={followup?.dueSilent} />
+                <MetricCard label="Prog. A" value={followup?.scheduledClick} />
+                <MetricCard label="Prog. B" value={followup?.scheduledOpen} />
+                <MetricCard label="Prog. C" value={followup?.scheduledSilent} />
+              </div>
+              <p className="mt-3 text-xs text-violet-900/70">
+                Parados por venta: {followup?.stoppedSale ?? 0} · Secuencia agotada:{' '}
+                {followup?.exhausted ?? 0} · Cupo FU día: {fuToday}/{fuCap}
+              </p>
+            </section>
+
             <section className="rounded-2xl border border-sky-100 bg-sky-50/60 px-5 py-4 text-sm text-slate-700">
-              <p className="font-semibold text-slate-900">Horario de trabajo (Europe/Madrid)</p>
+              <p className="font-semibold text-slate-900">Horario · sistema rentable (Europe/Madrid)</p>
               <p className="mt-1 leading-relaxed">
-                Prepare ~07:00 (solo cola ≥{queueTarget}) · oleadas cada 30 min 08:00–17:30 · Telegram
-                progreso 12:00 y 16:00 · cierre 21:00 (3 en total). Si la meta de altas se cumple antes,
-                se deja de enviar y el stock queda para el día siguiente.
+                Prepare ~07:00 · oleadas {wavesPerDay}×{waveSize} entre 08:00–17:30 · en cada oleada{' '}
+                <strong>FU primero</strong> (click→open→silent) luego cold hasta cupos ({coldCap}+
+                {fuCap}={hardCap}) · Telegram 12:00 · 16:00 · 21:00 · delay {delaySec}s. Si Plan
+                Check-in ≥{checkinPaidGoal}, se para el día.
               </p>
             </section>
 
