@@ -81,9 +81,14 @@ export async function sendTrackedOutreachLead(lead: {
     });
   const subjectPreview = isFollowUp
     ? buildFollowUp(signupRaw).subject
-    : audience === 'agency'
-      ? `${lead.domain || 'gestora'}: registro en 1 minuto — prueba gratis`
-      : `${lead.domain || 'tu alojamiento'}: regístrate en 1 minuto y pruébalo gratis`;
+    : buildColdOutreachEmail({
+        toEmail: email,
+        domain: lead.domain,
+        sourceUrl: lead.source_url,
+        optOutUrl,
+        signupUrl: signupRaw,
+        audience,
+      }).subject;
 
   let trackingId = '';
   try {

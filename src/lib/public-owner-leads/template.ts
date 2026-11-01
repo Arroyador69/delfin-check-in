@@ -104,33 +104,35 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
   const videoThumb =
     process.env.OUTREACH_INTRO_VIDEO_THUMB?.trim() || OUTREACH_INTRO_VIDEO_THUMB;
 
-  // Asunto: claro, acción + gratis (sin jerga “onboarding”)
+  // Asunto personalizado por dominio + audiencia (sin jerga “onboarding”)
   const subject = isAgency
-    ? `Registraos en 1 minuto y probadlo gratis — check-in en el móvil`
+    ? `${domainLabel}: registro en 1 minuto — prueba gratis`
     : isHotel
-      ? `Registraos en 1 minuto y probadlo gratis — check-in en el móvil`
-      : `Regístrate en 1 minuto y pruébalo gratis — check-in en el móvil`;
+      ? `${domainLabel}: registro en 1 minuto — check-in en el móvil`
+      : `${domainLabel}: regístrate en 1 minuto y pruébalo gratis`;
 
   const preheader = isAgency
-    ? 'Sin tarjeta. En un minuto creáis la cuenta en Delfín Check-in y tenéis el enlace del huésped.'
+    ? `Para ${domainLabel}: sin tarjeta, en un minuto tenéis el enlace del huésped.`
     : isHotel
-      ? 'Sin tarjeta. En un minuto registráis el hotel y tenéis el enlace del huésped.'
-      : 'Sin tarjeta. En un minuto te registras en Delfín Check-in y pruebas el check-in gratis.';
+      ? `Para ${domainLabel}: sin tarjeta, en un minuto el enlace de check-in del huésped.`
+      : `Para ${domainLabel}: sin tarjeta, en un minuto pruebas el check-in gratis.`;
 
-  // Hook + valor (sin “encontré tu email”)
+  const greeting = isAgency || isHotel ? 'Hola,' : 'Hola,';
+
+  // Hook + valor anclado al dominio del lead (sin “encontré tu email”)
   const pitchBody = isAgency
-    ? `Si gestionáis viviendas turísticas, el parte de viajeros a SES Hospedajes es obligatorio. Con Delfín Check-in el huésped rellena en el móvil, vosotros revisáis y enviáis. En el plan gratis el envío es manual; con Plan Check-in (~2€/mes) es automático. También: limpiezas, reservas directas (menos comisiones Airbnb/Booking) y panel multi-vivienda.`
+    ? `Os escribo por ${domainLabel}. Si gestionáis viviendas turísticas, el parte de viajeros a SES Hospedajes es obligatorio. Con Delfín Check-in el huésped rellena en el móvil, vosotros revisáis y enviáis. En el plan gratis el envío es manual; con Plan Check-in (~2€/mes) es automático. También: limpiezas, reservas directas (menos comisiones Airbnb/Booking) y panel multi-vivienda.`
     : isHotel
-      ? `En hoteles y hostales el RD 933/2021 exige registrar viajeros en SES Hospedajes. Con Delfín Check-in el huésped hace el check-in en el móvil. Gratis: envío manual del parte + panel y extras. Plan Check-in (~2€/mes): envío automático. Además limpiezas y reservas directas.`
-      : `Si tienes un alquiler vacacional en España, debes enviar el parte de viajeros a SES Hospedajes. Con Delfín Check-in el huésped rellena en el móvil — ahorras tiempo en cada llegada.
+      ? `Os escribo por ${domainLabel}. En hoteles y hostales el RD 933/2021 exige registrar viajeros en SES Hospedajes. Con Delfín Check-in el huésped hace el check-in en el móvil. Gratis: envío manual del parte + panel y extras. Plan Check-in (~2€/mes): envío automático. Además limpiezas y reservas directas.`
+      : `Te escribo por ${domainLabel}. Si tienes un alquiler vacacional en España, debes enviar el parte de viajeros a SES Hospedajes. Con Delfín Check-in el huésped rellena en el móvil — ahorras tiempo en cada llegada.
 
 Gratis (sin tarjeta): formulario, panel, limpiezas y envío manual a SES Hospedajes. Plan Check-in (~2€/mes): envío automático. Cuando crezcas, reservas directas y reputación Google están en planes superiores.`;
 
   const trialLine = isAgency
-    ? `Cread la cuenta en 1 minuto (gratis, sin tarjeta): elegís el tipo de alojamiento, creáis la primera unidad y ya tenéis el enlace del huésped. Lo demás lo podéis completar después, con calma.`
+    ? `Para ${domainLabel}: cread la cuenta en 1 minuto (gratis, sin tarjeta), elegís el tipo de alojamiento, creáis la primera unidad y ya tenéis el enlace del huésped. Lo demás lo podéis completar después, con calma.`
     : isHotel
-      ? `Registraos en 1 minuto (gratis, sin tarjeta): habitación + enlace del huésped listos. Si queréis envío automático a SES Hospedajes, Plan Check-in desde 2€/mes.`
-      : `Regístrate en Delfín Check-in en 1 minuto y pruébalo gratis (sin tarjeta): creas tu unidad y copias el enlace del huésped. Si más adelante quieres envío automático a SES Hospedajes, Plan Check-in desde 2€/mes.`;
+      ? `Para ${domainLabel}: registraos en 1 minuto (gratis, sin tarjeta) — habitación + enlace del huésped listos. Si queréis envío automático a SES Hospedajes, Plan Check-in desde 2€/mes.`
+      : `Para ${domainLabel}: regístrate en Delfín Check-in en 1 minuto y pruébalo gratis (sin tarjeta): creas tu unidad y copias el enlace del huésped. Si más adelante quieres envío automático a SES Hospedajes, Plan Check-in desde 2€/mes.`;
 
   const ctaLabel = isAgency || isHotel
     ? 'Crear cuenta gratis · 1 minuto'
@@ -162,7 +164,7 @@ Gratis (sin tarjeta): formulario, panel, limpiezas y envío manual a SES Hospeda
     .join('')}</tr></table>`;
 
   const text = [
-    `Hola,`,
+    greeting,
     ``,
     `Soy ${sender}.`,
     ``,
@@ -240,7 +242,7 @@ Gratis (sin tarjeta): formulario, panel, limpiezas y envío manual a SES Hospeda
 
           <tr>
             <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65;color:#0f172a;">
-              <p style="margin:0 0 14px;">Hola,</p>
+              <p style="margin:0 0 14px;">${escapeHtml(greeting)}</p>
               <p style="margin:0 0 16px;">Soy <strong>${escapeHtml(sender)}</strong>.</p>
               ${pitchBody
                 .split(/\n\n+/)
