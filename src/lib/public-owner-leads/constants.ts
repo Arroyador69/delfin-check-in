@@ -68,11 +68,17 @@ export const PUBLIC_OWNER_LEADS_CRON_SLOTS_PER_DAY = 20;
 /** FU-A: días tras click para el 1er follow-up. */
 export const POL_FU_CLICK_DELAY_DAYS = 2;
 /** FU-A: días entre 1er y 2º follow-up a quien hizo click. */
-export const POL_FU_CLICK_SECOND_DELAY_DAYS = 3;
+export const POL_FU_CLICK_SECOND_DELAY_DAYS = 5;
 /** FU-B: días desde el cold enviado hasta follow-up a quien abrió (sin click). */
-export const POL_FU_OPEN_DELAY_DAYS = 5;
+export const POL_FU_OPEN_DELAY_DAYS = 3;
 /** FU-C: días desde el cold enviado hasta follow-up a silenciosos. */
 export const POL_FU_SILENT_DELAY_DAYS = 8;
+
+/**
+ * Meta operativa hoy: altas Plan Check-in (pago) atribuidas a outreach/FU.
+ * Complementa ONBOARDINGS_DAILY_GOAL (completed gratis).
+ */
+export const PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL = 10;
 
 /** Máx. toques totales (cold incluido). Click: cold + 2 FU. Open/silent: cold + 1 FU. */
 export const POL_FU_MAX_TOUCHES_CLICK = 3;

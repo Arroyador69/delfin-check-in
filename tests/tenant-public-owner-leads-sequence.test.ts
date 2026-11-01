@@ -44,7 +44,7 @@ describe('public-owner-leads follow-up sequence', () => {
       POL_FU_CLICK_SECOND_DELAY_DAYS,
       POL_FU_OPEN_DELAY_DAYS,
       POL_FU_SILENT_DELAY_DAYS,
-    ]).toEqual([2, 3, 5, 8]);
+    ]).toEqual([2, 5, 3, 8]);
     expect([
       POL_FU_MAX_TOUCHES_CLICK,
       POL_FU_MAX_TOUCHES_OPEN,
@@ -60,12 +60,12 @@ describe('public-owner-leads follow-up sequence', () => {
     expect(p.nextTouchAt).toBe(addDaysIso(at, 8));
   });
 
-  it('open programa fu_open (+5d desde sent; vencido → ahora)', () => {
+  it('open programa fu_open (+3d desde sent; vencido → ahora)', () => {
     const p = patchAfterOpened(lead({ sentAt: iso(-10) }), iso(0));
     expect(p.nextTouchKind).toBe('fu_open');
     expect(new Date(p.nextTouchAt!).getTime()).toBeLessThanOrEqual(Date.now() + 1000);
     const future = patchAfterOpened(lead({ sentAt: iso(0) }), iso(0));
-    expect(new Date(future.nextTouchAt!).getTime()).toBeGreaterThan(Date.now() + 4 * DAY);
+    expect(new Date(future.nextTouchAt!).getTime()).toBeGreaterThan(Date.now() + 2 * DAY);
   });
 
   it('open no pisa click ni fu_open ya agendado', () => {
