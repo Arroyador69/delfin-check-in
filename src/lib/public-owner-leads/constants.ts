@@ -32,8 +32,8 @@ export function isOnboardingWelcomeRetryPaused(): boolean {
   return isPublicOwnerLeadsPaused();
 }
 
-/** Emails por oleada (anti rate-limit Zoho). */
-export const PUBLIC_OWNER_LEADS_WAVE_MAX = 50;
+/** Emails por oleada (cron cada 30 min · 20 slots → 1300/día). */
+export const PUBLIC_OWNER_LEADS_WAVE_MAX = 65;
 
 /**
  * Alias histórico: tamaño de oleada (antes 250).
@@ -42,20 +42,20 @@ export const PUBLIC_OWNER_LEADS_WAVE_MAX = 50;
 export const PUBLIC_OWNER_LEADS_DAILY_TARGET = PUBLIC_OWNER_LEADS_WAVE_MAX;
 
 /**
- * Tope total del día (cold + follow-up) = 10 oleadas × 50 = 500.
- * Reparto: cold 300 (descubrimiento) + FU 200 (conversión Check-in / hoteles).
+ * Tope total del día (cold + follow-up) = 20 oleadas × 65 = 1300.
+ * Reparto: cold 300 (descubrimiento) + FU 1000 (conversión Check-in / hoteles).
  * Cold nunca se reenvía al mismo email.
  */
-export const PUBLIC_OWNER_LEADS_DAILY_HARD_CAP = 500;
+export const PUBLIC_OWNER_LEADS_DAILY_HARD_CAP = 1300;
 
 /** Tope diario solo cold (primer contacto / descubrimiento). */
 export const PUBLIC_OWNER_LEADS_COLD_DAILY_CAP = 300;
 
 /** Tope diario solo follow-ups (FU-A click > FU-B open > FU-C silencio). */
-export const PUBLIC_OWNER_LEADS_FU_DAILY_CAP = 200;
+export const PUBLIC_OWNER_LEADS_FU_DAILY_CAP = 1000;
 
-/** Nº de oleadas de envío/día para llegar al hard cap (10 × 50). */
-export const PUBLIC_OWNER_LEADS_WAVES_PER_DAY = 10;
+/** Nº de oleadas de envío/día para llegar al hard cap (20 × 65). */
+export const PUBLIC_OWNER_LEADS_WAVES_PER_DAY = 20;
 
 /**
  * Slots de cron (cada 30 min, 08:00–17:30 Madrid). Independiente de las

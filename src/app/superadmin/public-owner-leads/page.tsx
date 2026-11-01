@@ -105,14 +105,14 @@ export default function PublicOwnerLeadsAdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [tableReady, setTableReady] = useState(false);
   const [migrationHint, setMigrationHint] = useState<string | null>(null);
-  const [dailyTarget, setDailyTarget] = useState(50);
-  const [hardCap, setHardCap] = useState(500);
+  const [dailyTarget, setDailyTarget] = useState(65);
+  const [hardCap, setHardCap] = useState(1300);
   const [coldCap, setColdCap] = useState(300);
-  const [fuCap, setFuCap] = useState(200);
-  const [wavesPerDay, setWavesPerDay] = useState(10);
+  const [fuCap, setFuCap] = useState(1000);
+  const [wavesPerDay, setWavesPerDay] = useState(20);
   const [delayMs, setDelayMs] = useState(1800);
   const [scheduleHint, setScheduleHint] = useState(
-    '08:00–17:30 Madrid · 50/oleada · FU primero · Telegram 12:00 + 16:00 + 21:00'
+    '08:00–17:30 Madrid · 65/oleada · FU primero · stop a 10 Plan Check-in · Telegram 12:00 + 16:00 + 21:00'
   );
   const [reserveReady, setReserveReady] = useState(0);
   const [onboardingsToday, setOnboardingsToday] = useState(0);
@@ -162,16 +162,16 @@ export default function PublicOwnerLeadsAdminPage() {
       }
       setTableReady(Boolean(data.table_ready));
       setMigrationHint(data.table_ready ? null : data.message || null);
-      setDailyTarget(Number(data.wave_max || data.daily_target || 50));
-      setHardCap(Number(data.daily_hard_cap || 500));
+      setDailyTarget(Number(data.wave_max || data.daily_target || 65));
+      setHardCap(Number(data.daily_hard_cap || 1300));
       setColdCap(Number(data.cold_daily_cap || data.system?.cold_cap || 300));
-      setFuCap(Number(data.fu_daily_cap || data.system?.fu_cap || 200));
-      setWavesPerDay(Number(data.waves_per_day || 10));
+      setFuCap(Number(data.fu_daily_cap || data.system?.fu_cap || 1000));
+      setWavesPerDay(Number(data.waves_per_day || 20));
       setDelayMs(Number(data.delay_ms || 1800));
       setScheduleHint(
         String(
           data.schedule_hint ||
-            '08:00–17:30 Madrid · 50/oleada · FU primero · Telegram 12:00 + 16:00 + 21:00'
+            '08:00–17:30 Madrid · 65/oleada · FU primero · stop a 10 Plan Check-in · Telegram 12:00 + 16:00 + 21:00'
         )
       );
       setReserveReady(Number(data.reserve_ready || 0));
@@ -279,8 +279,8 @@ export default function PublicOwnerLeadsAdminPage() {
   );
   const signupGoalMet = onboardingsToday >= ONBOARDING_DAILY_GOAL;
   const checkinGoalMet = checkinPaidToday >= checkinPaidGoal;
-  const waveSize = dailyTarget; // 50 por oleada
-  const queueTarget = hardCap; // recámara ≈ tope día (500)
+  const waveSize = dailyTarget; // 65 por oleada
+  const queueTarget = hardCap; // recámara ≈ tope día (1300)
   const delaySec = Math.round((delayMs / 1000) * 10) / 10;
   const dueTotal =
     Number(followup?.dueClick || 0) +
@@ -306,10 +306,10 @@ export default function PublicOwnerLeadsAdminPage() {
               Sistema <strong className="text-slate-900">cold + follow-up (A→B→C)</strong> · tope{' '}
               <strong className="text-slate-900">{hardCap}/día</strong> (
               <strong className="text-slate-900">{coldCap} cold</strong> +{' '}
-              <strong className="text-slate-900">{fuCap} FU</strong>) · FU primero en cada oleada ·
-              metas <strong className="text-slate-900">{ONBOARDING_DAILY_GOAL} onboardings</strong> +{' '}
-              <strong className="text-slate-900">{checkinPaidGoal} Plan Check-in</strong> ·{' '}
-              {scheduleHint} · cola <strong className="text-slate-900">{reserveReady}</strong>
+              <strong className="text-slate-900">{fuCap} FU</strong>) · FU primero ·{' '}
+              <strong className="text-slate-900">meta #{checkinPaidGoal} Plan Check-in / día</strong>{' '}
+              (onboardings {ONBOARDING_DAILY_GOAL} secundario) · {scheduleHint} · cola{' '}
+              <strong className="text-slate-900">{reserveReady}</strong>
               {paused ? (
                 <span className="ml-2 inline-flex items-center rounded-md bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-900">
                   PAUSADO
@@ -359,11 +359,11 @@ export default function PublicOwnerLeadsAdminPage() {
             </button>
             <button
               type="button"
-              disabled={busy || !tableReady || signupGoalMet || paused}
+              disabled={busy || !tableReady || checkinGoalMet || paused}
               onClick={() => {
                 if (
                   !confirm(
-                    `¿Enviar hasta ${waveSize} emails ahora? (FU primero · delay ${delaySec}s · tope ${hardCap}: ${coldCap} cold + ${fuCap} FU)`
+                    `¿Enviar hasta ${waveSize} emails ahora? (FU primero · delay ${delaySec}s · tope ${hardCap}: ${coldCap} cold + ${fuCap} FU · meta ${checkinPaidGoal} Plan Check-in)`
                   )
                 )
                   return;
@@ -459,10 +459,8 @@ export default function PublicOwnerLeadsAdminPage() {
                   />
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
-                  Altas atribuidas hoy: {signupsToday}.{' '}
-                  {wavesStillRun
-                    ? `Oleadas activas hasta meta o tope.`
-                    : `Meta onboardings alcanzada — sin más envíos hoy.`}
+                  Altas atribuidas hoy: {signupsToday}. Oleadas paran al llegar a{' '}
+                  {checkinPaidGoal} Plan Check-in (pago), no a esta meta.
                 </p>
               </div>
 
@@ -589,8 +587,8 @@ export default function PublicOwnerLeadsAdminPage() {
               <p className="mt-1 leading-relaxed">
                 Prepare ~07:00 · oleadas {wavesPerDay}×{waveSize} entre 08:00–17:30 · en cada oleada{' '}
                 <strong>FU primero</strong> (click→open→silent) luego cold hasta cupos ({coldCap}+
-                {fuCap}={hardCap}) · Telegram 12:00 · 16:00 · 21:00 · delay {delaySec}s. Si onboardings ≥
-                {ONBOARDING_DAILY_GOAL}, se para el día.
+                {fuCap}={hardCap}) · Telegram 12:00 · 16:00 · 21:00 · delay {delaySec}s. Si Plan
+                Check-in ≥{checkinPaidGoal}, se para el día.
               </p>
             </section>
 

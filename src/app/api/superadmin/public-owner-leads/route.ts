@@ -293,7 +293,6 @@ export async function GET(req: NextRequest) {
     } catch {
       onboardingsToday = 0;
     }
-    const wavesStillRun = onboardingsToday < PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL;
 
     let checkinPaidToday = 0;
     try {
@@ -308,6 +307,7 @@ export async function GET(req: NextRequest) {
     } catch {
       checkinPaidToday = 0;
     }
+    const wavesStillRun = checkinPaidToday < PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL;
 
     let fu: Awaited<ReturnType<typeof followUpCounts>> | null = null;
     try {
@@ -344,7 +344,7 @@ export async function GET(req: NextRequest) {
         ? 'Captación PAUSADA — PUBLIC_OWNER_LEADS_PAUSED=1'
         : null,
       schedule_hint:
-        '08:00–17:30 Madrid · 50/oleada · FU primero (A→B→C) · cold después · Telegram 12:00 + 16:00 + 21:00',
+        '08:00–17:30 Madrid · 65/oleada · FU primero (A→B→C) · cold 300 · FU 1000 · stop a 10 Plan Check-in · Telegram 12:00 + 16:00 + 21:00',
       system: {
         model: 'cold+followup',
         hard_cap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
@@ -352,8 +352,8 @@ export async function GET(req: NextRequest) {
         fu_cap: PUBLIC_OWNER_LEADS_FU_DAILY_CAP,
         priority: 'fu_click → fu_open → fu_silent → cold',
         goals: {
-          onboardings: PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
           checkin_paid: PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL,
+          onboardings: PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
         },
       },
       followup: fu,

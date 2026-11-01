@@ -14,8 +14,7 @@ import {
   PUBLIC_OWNER_LEADS_MIN_DELAY_MS,
   PUBLIC_OWNER_LEADS_MIN_QUEUED,
   PUBLIC_OWNER_LEADS_WAVE_MAX,
-  PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL,
-  PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
+  PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL,
 } from './constants';
 import { isPlausiblePublicEmail, scoreEmailForSource } from './emails';
 import { extractPublicEmailsFromUrl, isBlockedOutreachHost, normalizeUrl } from './extract-web';
@@ -150,6 +149,22 @@ async function countCompletedOnboardingsToday(): Promise<number> {
         AT TIME ZONE 'Europe/Madrid'
   `;
   return Number(r.rows[0]?.n || 0);
+}
+
+/** Planes de pago (Check-in / standard / pro) tocados hoy — meta rentable. */
+async function countCheckinPaidToday(): Promise<number> {
+  try {
+    const r = await sql`
+      SELECT COUNT(*)::int AS n
+      FROM tenants
+      WHERE plan_type IN ('checkin', 'standard', 'pro')
+        AND updated_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+          AT TIME ZONE 'Europe/Madrid'
+    `;
+    return Number(r.rows[0]?.n || 0);
+  } catch {
+    return 0;
+  }
 }
 
 async function processPendingSources(
@@ -338,6 +353,7 @@ export async function runDailyPublicOwnerLeads(opts?: {
   const sentTodayBefore = await countSentToday();
   const signupsTodayBefore = await countSignupsToday();
   const onboardingsTodayBefore = await countCompletedOnboardingsToday();
+  const checkinPaidTodayBefore = await countCheckinPaidToday();
 
   // Kill switch: sin envíos cold (prepare/refill sí pueden seguir con maxSend=0).
   if (
@@ -369,11 +385,11 @@ export async function runDailyPublicOwnerLeads(opts?: {
     };
   }
 
-  // Oleadas: si ya hay ≥20 onboardings completados hoy → no enviar; cola para mañana.
+  // Oleadas: meta rentable = ≥10 Plan Check-in (pago) hoy → stop; cola para mañana.
   // prepare: siempre rellena cola (maxSend=0). Aunque no enviemos: SIEMPRE refill MIN_QUEUED.
   if (
     wave !== 'prepare' &&
-    onboardingsTodayBefore >= PUBLIC_OWNER_ONBOARDINGS_DAILY_GOAL
+    checkinPaidTodayBefore >= PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL
   ) {
     let refillSummary: DailyOutreachResult['refill'];
     if (!dryRun) {
