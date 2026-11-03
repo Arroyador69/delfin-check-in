@@ -72,6 +72,7 @@ type DayRow = {
   clicked?: number;
   signed_up?: number;
   bounced?: number;
+  paid?: number;
 };
 
 type IntakeRow = {
@@ -705,7 +706,8 @@ export default function PublicOwnerLeadsAdminPage() {
                 <div>
                   <h2 className="font-semibold text-slate-900">Envíos por día (últimos 30)</h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Pulsa un día para ver solo esos envíos · timezone Europe/Madrid
+                    Enviados = cold + FU + recovery · meta {hardCap}/día o stop a{' '}
+                    {checkinPaidGoal} Plan Check-in · Europe/Madrid
                   </p>
                 </div>
                 <button
@@ -725,23 +727,30 @@ export default function PublicOwnerLeadsAdminPage() {
                   <thead className="bg-slate-50/80 text-left text-slate-500 text-xs uppercase tracking-wide">
                     <tr>
                       <th className="px-4 py-2.5 font-semibold">Día</th>
-                      <th className="px-4 py-2.5 font-semibold">Enviados</th>
+                      <th className="px-4 py-2.5 font-semibold">Enviados / {hardCap}</th>
                       <th className="px-4 py-2.5 font-semibold">Abiertos</th>
                       <th className="px-4 py-2.5 font-semibold">Clicks</th>
                       <th className="px-4 py-2.5 font-semibold">Altas</th>
+                      <th className="px-4 py-2.5 font-semibold">
+                        Pagos / {checkinPaidGoal}
+                      </th>
                       <th className="px-4 py-2.5 font-semibold">Undelivered</th>
                     </tr>
                   </thead>
                   <tbody>
                     {byDay.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                        <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
                           Aún no hay envíos registrados.
                         </td>
                       </tr>
                     )}
                     {byDay.map((row) => {
                       const active = dayFilter === row.day;
+                      const sentN = Number(row.sent ?? 0);
+                      const paidN = Number(row.paid ?? 0);
+                      const sentOk = sentN >= hardCap * 0.85 || paidN >= checkinPaidGoal;
+                      const paidOk = paidN >= checkinPaidGoal;
                       return (
                         <tr
                           key={row.day}
@@ -758,13 +767,29 @@ export default function PublicOwnerLeadsAdminPage() {
                               </span>
                             ) : null}
                           </td>
-                          <td className="px-4 py-2.5 tabular-nums font-semibold text-slate-900">
-                            {row.sent ?? 0}
+                          <td
+                            className={`px-4 py-2.5 tabular-nums font-semibold ${
+                              sentOk ? 'text-emerald-800' : 'text-amber-800'
+                            }`}
+                          >
+                            {sentN}
+                            <span className="text-slate-400 font-medium"> / {hardCap}</span>
                           </td>
                           <td className="px-4 py-2.5 tabular-nums text-slate-700">{row.opened ?? 0}</td>
                           <td className="px-4 py-2.5 tabular-nums text-slate-700">{row.clicked ?? 0}</td>
                           <td className="px-4 py-2.5 tabular-nums font-semibold text-emerald-800">
                             {row.signed_up ?? 0}
+                          </td>
+                          <td
+                            className={`px-4 py-2.5 tabular-nums font-semibold ${
+                              paidOk ? 'text-emerald-800' : 'text-slate-800'
+                            }`}
+                          >
+                            {paidN}
+                            <span className="text-slate-400 font-medium">
+                              {' '}
+                              / {checkinPaidGoal}
+                            </span>
                           </td>
                           <td className="px-4 py-2.5 tabular-nums text-rose-800">{row.bounced ?? 0}</td>
                         </tr>
