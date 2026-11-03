@@ -644,12 +644,27 @@ export async function runDailyPublicOwnerLeads(opts?: {
 
     let fuDueCount = 0;
     let recoverySentWave = 0;
+    let queuedForRecoveryCap = 0;
+    try {
+      const qCap = await sql`
+        SELECT COUNT(*)::int AS n FROM public_owner_leads
+        WHERE status = 'queued' AND opted_out = false
+      `;
+      queuedForRecoveryCap = Number(qCap.rows[0]?.n || 0);
+    } catch {
+      queuedForRecoveryCap = 0;
+    }
+    // Soft 250; si cola cold vacía/baja → recovery puede empujar hasta FU_CAP (no matar el día).
+    const recoveryCapEffective =
+      queuedForRecoveryCap < 50
+        ? Math.max(PUBLIC_OWNER_LEADS_RECOVERY_DAILY_CAP, PUBLIC_OWNER_LEADS_FU_DAILY_CAP)
+        : PUBLIC_OWNER_LEADS_RECOVERY_DAILY_CAP;
     // 1) Follow-ups primero (A click → B open → C silencio → recovery opens)
     try {
       const due = await selectDueFollowUps(fuRoom);
       fuDueCount = due.length;
       errors.push(
-        `fu:due=${due.length} room=${fuRoom} today=${fuToday} recoveryToday=${recoveryToday}`
+        `fu:due=${due.length} room=${fuRoom} today=${fuToday} recoveryToday=${recoveryToday} recoveryCap=${recoveryCapEffective} queued=${queuedForRecoveryCap}`
       );
       for (const lead of due) {
         const email = lead.email.toLowerCase();
@@ -660,7 +675,7 @@ export async function runDailyPublicOwnerLeads(opts?: {
         const touch = (lead.nextTouchKind || 'fu_open') as OutreachTouch;
         if (touch === 'cold') continue;
         if (touch === 'fu_recovery') {
-          if (recoveryToday + recoverySentWave >= PUBLIC_OWNER_LEADS_RECOVERY_DAILY_CAP) {
+          if (recoveryToday + recoverySentWave >= recoveryCapEffective) {
             continue;
           }
         }
