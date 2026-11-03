@@ -63,15 +63,17 @@ export async function GET(req: NextRequest) {
 
   const dryRun = req.nextUrl.searchParams.get('dryRun') === '1';
   const force = req.nextUrl.searchParams.get('force') === '1';
+  const skipStockRefill = req.nextUrl.searchParams.get('skipStockRefill') === '1';
   const maxRaw = parseInt(req.nextUrl.searchParams.get('max') || '', 10);
   const maxSend = Number.isFinite(maxRaw)
-    ? Math.min(PUBLIC_OWNER_LEADS_WAVE_MAX, Math.max(1, maxRaw))
+    ? Math.min(PUBLIC_OWNER_LEADS_WAVE_MAX * 2, Math.max(1, maxRaw))
     : PUBLIC_OWNER_LEADS_WAVE_MAX;
 
   const result = await runPublicOwnerLeadsWaveCron({
     dryRun,
     force,
     maxSend,
+    skipStockRefill,
   });
 
   return NextResponse.json(

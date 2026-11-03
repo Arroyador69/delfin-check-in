@@ -50,6 +50,8 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
   /** Ignorar ventana horaria (manual Superadmin). */
   force?: boolean;
   extractLimit?: number;
+  /** No hacer prefill/refill pesado (rescate cuando hay due y poco tiempo). */
+  skipStockRefill?: boolean;
 }): Promise<WaveCronResult> {
   const dryRun = Boolean(opts?.dryRun);
   if (!process.env.PUBLIC_OWNER_LEADS_FLOW) {
@@ -127,8 +129,9 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
 
     // Si la cola cold está vacía/baja, rellenar ANTES de enviar (si no, el día muere
     // cuando recovery/FU llegan a cupo y no queda stock cold).
+    // skipStockRefill=1: solo enviar due (rescate anti-timeout).
     let prefill: unknown = null;
-    if (!dryRun && wave !== 'prepare') {
+    if (!dryRun && wave !== 'prepare' && !opts?.skipStockRefill) {
       try {
         const qR = await sql`
           SELECT COUNT(*)::int AS n FROM public_owner_leads
@@ -148,6 +151,8 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
       } catch (e) {
         prefill = { error: e instanceof Error ? e.message : String(e) };
       }
+    } else if (opts?.skipStockRefill) {
+      prefill = { skipped: true };
     }
 
     // Enviar; skipRefill solo si ya prefillamos o hay stock. Prepare hace el refill completo.
@@ -187,7 +192,12 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
     // Post-envío: siempre apuntar a MIN_QUEUED (≥1000). Antes era target 300 y
     // la cola podía llegar a 0 a media jornada (hoy 2026-11-03: recovery cap + cola 0).
     let refillDeferred: unknown = null;
-    if (!dryRun && wave !== 'prepare' && !outreach.skippedBecauseGoalMet) {
+    if (
+      !dryRun &&
+      wave !== 'prepare' &&
+      !outreach.skippedBecauseGoalMet &&
+      !opts?.skipStockRefill
+    ) {
       try {
         const { refillQueuedStock } = await import('./refill-queue');
         refillDeferred = await refillQueuedStock({
@@ -202,6 +212,8 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
           error: e instanceof Error ? e.message : String(e),
         };
       }
+    } else if (opts?.skipStockRefill) {
+      refillDeferred = { skipped: true };
     }
 
     return {
