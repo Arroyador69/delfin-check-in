@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
           WHERE COALESCE(last_touch_at, sent_at) >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
             AT TIME ZONE 'Europe/Madrid'
             AND (
-              last_touch_kind IN ('cold', 'fu_click', 'fu_open', 'fu_silent')
+              last_touch_kind IN ('cold', 'fu_click', 'fu_open', 'fu_silent', 'fu_recovery')
               OR (last_touch_kind IS NULL AND status = 'sent')
             )
         )::int AS sent_today,
@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
         COUNT(*) FILTER (
           WHERE last_touch_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
             AT TIME ZONE 'Europe/Madrid'
-            AND last_touch_kind IN ('fu_click', 'fu_open', 'fu_silent')
+            AND last_touch_kind IN ('fu_click', 'fu_open', 'fu_silent', 'fu_recovery')
         )::int AS fu_today,
         COUNT(*) FILTER (
           WHERE last_touch_kind = 'fu_click'
@@ -127,6 +127,11 @@ export async function GET(req: NextRequest) {
             AND last_touch_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
               AT TIME ZONE 'Europe/Madrid'
         )::int AS fu_silent_today,
+        COUNT(*) FILTER (
+          WHERE last_touch_kind = 'fu_recovery'
+            AND last_touch_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
+              AT TIME ZONE 'Europe/Madrid'
+        )::int AS fu_recovery_today,
         COUNT(*) FILTER (
           WHERE status = 'bounced'
             AND updated_at >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid') AT TIME ZONE 'Europe/Madrid'
@@ -179,43 +184,77 @@ export async function GET(req: NextRequest) {
       ORDER BY n DESC
     `;
 
+    // Enviados = TODOS los toques (cold+FU+recovery) vía email_tracking, no solo cold sent_at.
     const byDayRaw = await sql`
+      WITH days AS (
+        SELECT (d::date) AS d
+        FROM generate_series(
+          ((NOW() AT TIME ZONE 'Europe/Madrid')::date - 29),
+          (NOW() AT TIME ZONE 'Europe/Madrid')::date,
+          '1 day'::interval
+        ) AS d
+      ),
+      sends AS (
+        SELECT
+          (created_at AT TIME ZONE 'Europe/Madrid')::date AS d,
+          COUNT(*)::int AS sent,
+          COUNT(*) FILTER (WHERE opened_at IS NOT NULL)::int AS opened,
+          COUNT(*) FILTER (WHERE clicked_at IS NOT NULL)::int AS clicked
+        FROM email_tracking
+        WHERE email_type = 'public_owner_outreach'
+          AND created_at >= ((NOW() AT TIME ZONE 'Europe/Madrid')::date - 30)
+            AT TIME ZONE 'Europe/Madrid'
+        GROUP BY 1
+      ),
+      signups AS (
+        SELECT
+          (signed_up_at AT TIME ZONE 'Europe/Madrid')::date AS d,
+          COUNT(*)::int AS signed_up
+        FROM public_owner_leads
+        WHERE signed_up_at IS NOT NULL
+          AND signed_up_at >= ((NOW() AT TIME ZONE 'Europe/Madrid')::date - 30)
+            AT TIME ZONE 'Europe/Madrid'
+        GROUP BY 1
+      ),
+      bounces AS (
+        SELECT
+          (updated_at AT TIME ZONE 'Europe/Madrid')::date AS d,
+          COUNT(*)::int AS bounced
+        FROM public_owner_leads
+        WHERE status = 'bounced'
+          AND updated_at >= ((NOW() AT TIME ZONE 'Europe/Madrid')::date - 30)
+            AT TIME ZONE 'Europe/Madrid'
+          AND COALESCE(last_error, '') !~* 'invalid-extract|invalid-email|css-garbage'
+        GROUP BY 1
+      ),
+      paid AS (
+        SELECT
+          (COALESCE(polar_last_event_at, updated_at) AT TIME ZONE 'Europe/Madrid')::date AS d,
+          COUNT(*)::int AS paid
+        FROM tenants
+        WHERE plan_type IN ('checkin', 'standard', 'pro')
+          AND COALESCE(polar_subscription_status, '') IN ('active', 'trialing')
+          AND COALESCE(polar_last_event_at, updated_at) >= ((NOW() AT TIME ZONE 'Europe/Madrid')::date - 30)
+            AT TIME ZONE 'Europe/Madrid'
+          AND email NOT ILIKE '%@delfincheckin.com'
+        GROUP BY 1
+      )
       SELECT
-        to_char(
-          (sent_at AT TIME ZONE 'Europe/Madrid')::date,
-          'YYYY-MM-DD'
-        ) AS day,
-        COUNT(*)::int AS sent,
-        COUNT(*) FILTER (WHERE opened_at IS NOT NULL)::int AS opened,
-        COUNT(*) FILTER (WHERE clicked_at IS NOT NULL)::int AS clicked,
-        COUNT(*) FILTER (WHERE signed_up_at IS NOT NULL)::int AS signed_up,
-        COUNT(*) FILTER (WHERE status = 'bounced')::int AS bounced
-      FROM public_owner_leads
-      WHERE status = 'sent'
-        AND sent_at IS NOT NULL
-        AND sent_at >= NOW() - INTERVAL '30 days'
-      GROUP BY 1
-      ORDER BY 1 DESC
-      LIMIT 30
+        to_char(days.d, 'YYYY-MM-DD') AS day,
+        COALESCE(sends.sent, 0)::int AS sent,
+        COALESCE(sends.opened, 0)::int AS opened,
+        COALESCE(sends.clicked, 0)::int AS clicked,
+        COALESCE(signups.signed_up, 0)::int AS signed_up,
+        COALESCE(bounces.bounced, 0)::int AS bounced,
+        COALESCE(paid.paid, 0)::int AS paid
+      FROM days
+      LEFT JOIN sends ON sends.d = days.d
+      LEFT JOIN signups ON signups.d = days.d
+      LEFT JOIN bounces ON bounces.d = days.d
+      LEFT JOIN paid ON paid.d = days.d
+      ORDER BY days.d DESC
     `;
-
-    // Siempre mostrar el día Madrid de hoy (aunque vaya 0) — evita “hoy no aparece”
-    const todayMadrid = await sql`
-      SELECT to_char((NOW() AT TIME ZONE 'Europe/Madrid')::date, 'YYYY-MM-DD') AS day
-    `;
-    const todayKey = String(todayMadrid.rows[0]?.day || '');
-    const byDayRows = [...byDayRaw.rows];
-    if (todayKey && !byDayRows.some((r) => String(r.day) === todayKey)) {
-      byDayRows.unshift({
-        day: todayKey,
-        sent: 0,
-        opened: 0,
-        clicked: 0,
-        signed_up: 0,
-        bounced: 0,
-      });
-    }
-    const byDay = { rows: byDayRows };
+    const byDay = { rows: byDayRaw.rows };
 
     let rows;
     if (dayFilter && /^\d{4}-\d{2}-\d{2}$/.test(dayFilter)) {
