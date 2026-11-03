@@ -9,6 +9,7 @@ import {
   PUBLIC_OWNER_CHECKIN_PAID_DAILY_GOAL,
   PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
   PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN,
+  PUBLIC_OWNER_LEADS_MIN_QUEUED,
   PUBLIC_OWNER_LEADS_WAVE_MAX,
   PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
 } from './constants';
@@ -35,6 +36,8 @@ export type WaveCronResult = {
   engagement?: unknown;
   outreach?: Awaited<ReturnType<typeof runDailyPublicOwnerLeads>>;
   telegram?: unknown;
+  /** Refill de emergencia antes de enviar si cola &lt; 150. */
+  prefill?: unknown;
   refillDeferred?: unknown;
   error?: string;
 };
@@ -103,7 +106,7 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
           WHERE COALESCE(last_touch_at, sent_at) >= date_trunc('day', NOW() AT TIME ZONE 'Europe/Madrid')
             AT TIME ZONE 'Europe/Madrid'
             AND (
-              last_touch_kind IN ('cold', 'fu_click', 'fu_open', 'fu_silent')
+              last_touch_kind IN ('cold', 'fu_click', 'fu_open', 'fu_silent', 'fu_recovery')
               OR (last_touch_kind IS NULL AND status = 'sent')
             )
         `;
@@ -121,8 +124,33 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
       }
     }
     const progressKind = isProgressTelegramSlot(slot);
-    // Siempre enviar PRIMERO sin refill pesado (anti-timeout Vercel 300s).
-    // Refill ligero después. Prepare (07:00) hace refill completo a ≥1000.
+
+    // Si la cola cold está vacía/baja, rellenar ANTES de enviar (si no, el día muere
+    // cuando recovery/FU llegan a cupo y no queda stock cold).
+    let prefill: unknown = null;
+    if (!dryRun && wave !== 'prepare') {
+      try {
+        const qR = await sql`
+          SELECT COUNT(*)::int AS n FROM public_owner_leads
+          WHERE status = 'queued' AND opted_out = false
+        `;
+        const queuedNow = Number(qR.rows[0]?.n || 0);
+        if (queuedNow < 150) {
+          const { refillQueuedStock } = await import('./refill-queue');
+          prefill = await refillQueuedStock({
+            target: PUBLIC_OWNER_LEADS_MIN_QUEUED,
+            extractLimit: 45,
+            opendataLimit: 220,
+            alertIfStarved: true,
+            starveBelow: 40,
+          });
+        }
+      } catch (e) {
+        prefill = { error: e instanceof Error ? e.message : String(e) };
+      }
+    }
+
+    // Enviar; skipRefill solo si ya prefillamos o hay stock. Prepare hace el refill completo.
     const outreach = await runDailyPublicOwnerLeads({
       dryRun,
       wave,
@@ -156,18 +184,18 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
       telegram = { skippedNotify: true, reason: 'no_telegram_slot' };
     }
 
-    // Refill LIGERO post-envío (siempre, salvo dry-run / meta cumplida).
-    // Prepare hace el refill pesado a 1000; aquí reponemos ~300 listos.
+    // Post-envío: siempre apuntar a MIN_QUEUED (≥1000). Antes era target 300 y
+    // la cola podía llegar a 0 a media jornada (hoy 2026-11-03: recovery cap + cola 0).
     let refillDeferred: unknown = null;
     if (!dryRun && wave !== 'prepare' && !outreach.skippedBecauseGoalMet) {
       try {
         const { refillQueuedStock } = await import('./refill-queue');
         refillDeferred = await refillQueuedStock({
-          target: 300,
-          extractLimit: 18,
-          opendataLimit: 80,
+          target: PUBLIC_OWNER_LEADS_MIN_QUEUED,
+          extractLimit: 35,
+          opendataLimit: 160,
           alertIfStarved: true,
-          starveBelow: 40,
+          starveBelow: 80,
         });
       } catch (e) {
         refillDeferred = {
@@ -184,6 +212,7 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
       engagement,
       outreach,
       telegram,
+      prefill,
       refillDeferred,
     };
   } catch (e) {
