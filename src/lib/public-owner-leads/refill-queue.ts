@@ -70,6 +70,8 @@ export async function refillQueuedStock(opts?: {
   target?: number;
   extractLimit?: number;
   opendataLimit?: number;
+  /** Oleadas: omitir opendata/OSM lentos (prepare hace el gordo). */
+  light?: boolean;
   /** Si true, alerta Telegram cuando no se alcanza un mínimo usable. */
   alertIfStarved?: boolean;
   /** Umbral bajo el cual se considera “sin combustible”. */
@@ -79,6 +81,7 @@ export async function refillQueuedStock(opts?: {
   const extractLimit =
     opts?.extractLimit ?? Math.max(PUBLIC_OWNER_LEADS_EXTRACT_PER_RUN, 40);
   const opendataLimit = opts?.opendataLimit ?? 200;
+  const light = opts?.light === true || opendataLimit <= 0;
   const alertIfStarved = opts?.alertIfStarved !== false;
   const starveBelow = opts?.starveBelow ?? 50;
   const errors: string[] = [];
@@ -115,64 +118,68 @@ export async function refillQueuedStock(opts?: {
     errors.push(`seed:${e instanceof Error ? e.message : String(e)}`);
   }
 
-  try {
-    const od = await importAllOpenDataToQueue({
-      limitPerSource: Math.max(80, Math.floor(opendataLimit / 2)),
-      websiteLimitPerSource: emergency ? 200 : 120,
-    });
-    opendataQueued = od.queued;
-    sourcesQueued = od.sourcesQueued;
-    for (const r of od.results) {
-      errors.push(
-        `opendata:${r.source}:queued=${r.queued}:webs=${r.sourcesQueued}`
-      );
+  if (!light) {
+    try {
+      const od = await importAllOpenDataToQueue({
+        limitPerSource: Math.max(80, Math.floor(opendataLimit / 2)),
+        websiteLimitPerSource: emergency ? 200 : 120,
+      });
+      opendataQueued = od.queued;
+      sourcesQueued = od.sourcesQueued;
+      for (const r of od.results) {
+        errors.push(
+          `opendata:${r.source}:queued=${r.queued}:webs=${r.sourcesQueued}`
+        );
+      }
+    } catch (e) {
+      errors.push(`opendata:${e instanceof Error ? e.message : String(e)}`);
     }
-  } catch (e) {
-    errors.push(`opendata:${e instanceof Error ? e.message : String(e)}`);
-  }
 
-  // OSM soft (no tumbar el refill si Overpass cae)
-  try {
-    const { discoverOwnerSitesByPlace } = await import('./discover-by-place');
-    const disc = await discoverOwnerSitesByPlace({
-      maxPlaces: emergency ? 10 : 6,
-      maxCandidates: emergency ? 60 : 35,
-      delayMs: 280,
-      deadlineMs: emergency ? 70_000 : 45_000,
-      waveOffset: Math.floor(Date.now() / 60_000) % 8,
-    });
-    for (const url of disc.candidateUrls) {
-      await sql`
-        INSERT INTO public_owner_lead_sources (url, status)
-        VALUES (${url}, 'pending')
-        ON CONFLICT (url) DO NOTHING
-      `;
+    // OSM soft (no tumbar el refill si Overpass cae)
+    try {
+      const { discoverOwnerSitesByPlace } = await import('./discover-by-place');
+      const disc = await discoverOwnerSitesByPlace({
+        maxPlaces: emergency ? 10 : 6,
+        maxCandidates: emergency ? 60 : 35,
+        delayMs: 280,
+        deadlineMs: emergency ? 70_000 : 45_000,
+        waveOffset: Math.floor(Date.now() / 60_000) % 8,
+      });
+      for (const url of disc.candidateUrls) {
+        await sql`
+          INSERT INTO public_owner_lead_sources (url, status)
+          VALUES (${url}, 'pending')
+          ON CONFLICT (url) DO NOTHING
+        `;
+      }
+      for (const row of disc.emailsFromOsm) {
+        const host = String(row.website || '')
+          .replace(/^https?:\/\//i, '')
+          .replace(/^www\./i, '')
+          .split('/')[0]
+          .toLowerCase();
+        if (!host) continue;
+        await sql`
+          INSERT INTO public_owner_leads (email, domain, source_url, status, notes, queued_at)
+          VALUES (
+            ${row.email},
+            ${host},
+            ${row.website},
+            'queued',
+            ${`refill-osm:${row.place}`},
+            NOW()
+          )
+          ON CONFLICT (email) DO NOTHING
+        `;
+      }
+      errors.push(
+        `osm:places=${disc.places.length}:webs=${disc.candidateUrls.length}:emails=${disc.emailsFromOsm.length}`
+      );
+    } catch (e) {
+      errors.push(`osm:${e instanceof Error ? e.message : String(e)}`);
     }
-    for (const row of disc.emailsFromOsm) {
-      const host = String(row.website || '')
-        .replace(/^https?:\/\//i, '')
-        .replace(/^www\./i, '')
-        .split('/')[0]
-        .toLowerCase();
-      if (!host) continue;
-      await sql`
-        INSERT INTO public_owner_leads (email, domain, source_url, status, notes, queued_at)
-        VALUES (
-          ${row.email},
-          ${host},
-          ${row.website},
-          'queued',
-          ${`refill-osm:${row.place}`},
-          NOW()
-        )
-        ON CONFLICT (email) DO NOTHING
-      `;
-    }
-    errors.push(
-      `osm:places=${disc.places.length}:webs=${disc.candidateUrls.length}:emails=${disc.emailsFromOsm.length}`
-    );
-  } catch (e) {
-    errors.push(`osm:${e instanceof Error ? e.message : String(e)}`);
+  } else {
+    errors.push('light:skip_opendata_osm');
   }
 
   const pending = await sql`
@@ -257,9 +264,9 @@ export async function refillQueuedStock(opts?: {
 
   await promoteNewToQueued(target);
 
-  // Segunda pasada opendata si aún falta
+  // Segunda pasada opendata si aún falta (nunca en modo light)
   const mid = await countQueued();
-  if (mid < target) {
+  if (!light && mid < target) {
     try {
       const od2 = await importAllOpenDataToQueue({
         limitPerSource: Math.min(200, target - mid + 40),

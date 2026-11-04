@@ -168,7 +168,8 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
       telegram = { skippedNotify: true, reason: 'no_telegram_slot' };
     }
 
-    // Post-envío: refill best-effort. Si opendata cuelga, el envío YA salió.
+    // Post-envío: refill LIGHT (solo extract de pending). Opendata/OSM van en prepare;
+    // si se meten aquí Vercel hace 504 y el día parece “roto” aunque el envío ya salió.
     let refillDeferred: unknown = null;
     if (
       !dryRun &&
@@ -180,8 +181,9 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
         const { refillQueuedStock } = await import('./refill-queue');
         refillDeferred = await refillQueuedStock({
           target: PUBLIC_OWNER_LEADS_MIN_QUEUED,
-          extractLimit: 35,
-          opendataLimit: 160,
+          extractLimit: 40,
+          opendataLimit: 0,
+          light: true,
           alertIfStarved: true,
           starveBelow: 80,
         });
