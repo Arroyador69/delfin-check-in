@@ -127,35 +127,14 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
     }
     const progressKind = isProgressTelegramSlot(slot);
 
-    // Si la cola cold está vacía/baja, rellenar ANTES de enviar (si no, el día muere
-    // cuando recovery/FU llegan a cupo y no queda stock cold).
-    // skipStockRefill=1: solo enviar due (rescate anti-timeout).
-    let prefill: unknown = null;
-    if (!dryRun && wave !== 'prepare' && !opts?.skipStockRefill) {
-      try {
-        const qR = await sql`
-          SELECT COUNT(*)::int AS n FROM public_owner_leads
-          WHERE status = 'queued' AND opted_out = false
-        `;
-        const queuedNow = Number(qR.rows[0]?.n || 0);
-        if (queuedNow < 150) {
-          const { refillQueuedStock } = await import('./refill-queue');
-          prefill = await refillQueuedStock({
-            target: PUBLIC_OWNER_LEADS_MIN_QUEUED,
-            extractLimit: 45,
-            opendataLimit: 220,
-            alertIfStarved: true,
-            starveBelow: 40,
-          });
-        }
-      } catch (e) {
-        prefill = { error: e instanceof Error ? e.message : String(e) };
-      }
-    } else if (opts?.skipStockRefill) {
-      prefill = { skipped: true };
-    }
+    // NUNCA rellenar ANTES de enviar. El 2026-11-04 la cola cold=0 + opendata
+    // lento hizo timeout (300s) en cada cron → 0 mails pese a ~840 FU due.
+    // Orden fijo: 1) enviar due/cola  2) refill best-effort  3) prepare hace el gordo.
+    // skipStockRefill=1: solo enviar (rescate / catch-up sin tocar stock).
+    const prefill: unknown = opts?.skipStockRefill
+      ? { skipped: true, reason: 'skipStockRefill' }
+      : { skipped: true, reason: 'send_first_never_block' };
 
-    // Enviar; skipRefill solo si ya prefillamos o hay stock. Prepare hace el refill completo.
     const outreach = await runDailyPublicOwnerLeads({
       dryRun,
       wave,
@@ -189,8 +168,7 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
       telegram = { skippedNotify: true, reason: 'no_telegram_slot' };
     }
 
-    // Post-envío: siempre apuntar a MIN_QUEUED (≥1000). Antes era target 300 y
-    // la cola podía llegar a 0 a media jornada (hoy 2026-11-03: recovery cap + cola 0).
+    // Post-envío: refill best-effort. Si opendata cuelga, el envío YA salió.
     let refillDeferred: unknown = null;
     if (
       !dryRun &&
