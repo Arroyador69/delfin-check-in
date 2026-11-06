@@ -266,6 +266,25 @@ export async function syncTenantFromPolarSubscription(
     subscribedRooms: subscribedRoomsFromPolarSubscription(sub),
   });
 
+  // Pago real → cerrar secuencia outreach (antes se cerraba en alta FREE por error)
+  try {
+    const emailRow = await sql`
+      SELECT lower(trim(email)) AS email FROM tenants WHERE id = ${tenantId}::uuid LIMIT 1
+    `;
+    const paidEmail = String(emailRow.rows[0]?.email || '').trim();
+    if (paidEmail) {
+      const { stopSequenceByEmail } = await import(
+        '@/lib/public-owner-leads/sequence-db'
+      );
+      await stopSequenceByEmail(paidEmail, 'sale');
+    }
+  } catch (e) {
+    console.warn(
+      '[polar sync] stop outreach sequence:',
+      e instanceof Error ? e.message : e
+    );
+  }
+
   await maybeSendPostPaymentOnboardingEmail(tenantId, sub, eventType);
 
   console.log(`✅ [polar sync] plan=${plan} tenant=${tenantId} event=${eventType}`);

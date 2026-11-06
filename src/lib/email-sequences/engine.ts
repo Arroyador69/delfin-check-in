@@ -897,16 +897,36 @@ export async function processLifecycleEmailQueue(options?: {
   return result;
 }
 
-/** Inscribe un tenant recién creado en owner_trial_mir (prueba gratis) si aplica. */
+/**
+ * Inscribe lifecycle al crear / atribuir alta FREE.
+ * - Sin onboarding → trial MIR / fase 1 (activación).
+ * - Con onboarding hecho y sin pago → fase 2 (upgrade Check-in).
+ * Antes se salía si phase_1_goal_met y NUNCA se metía en fase 2 → 0 empujes a pago.
+ */
 export async function maybeEnrollNewTenantInLifecycle(tenantId: string): Promise<void> {
   try {
     await seedEmailSequences();
     const trial = await getSequenceByKey(SEQUENCE_KEY_OWNER_TRIAL_MIR);
     const phase1 = await getSequenceByKey(SEQUENCE_KEY_PHASE_1);
-    if (!trial && !phase1) return;
+    const phase2 = await getSequenceByKey(SEQUENCE_KEY_PHASE_2);
+    if (!trial && !phase1 && !phase2) return;
 
     const state = await loadTenantLifecycleState(tenantId);
-    if (!state || state.is_unsubscribed || state.phase_1_goal_met || state.phase_2_goal_met) return;
+    if (!state || state.is_unsubscribed || state.phase_2_goal_met) return;
+
+    // Ya configuró → empujar pago (Plan Check-in)
+    if (state.phase_1_goal_met) {
+      if (phase2) {
+        await enrollTenant(
+          tenantId,
+          phase2.id,
+          SEQUENCE_KEY_PHASE_2,
+          immediateSendAt(),
+          state
+        );
+      }
+      return;
+    }
 
     if (trial) {
       await enrollTenant(

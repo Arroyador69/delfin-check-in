@@ -3,7 +3,7 @@
  *
  * Requiere database/migration-public-owner-leads-followup.sql aplicada.
  * Misma regla que `backfillPatchFor` (sequence.ts), pero set-based en SQL:
- *   - opt-out → stopped_optout · bounced → stopped_bounce · alta → stopped_sale
+ *   - opt-out → stopped_optout · bounced → stopped_bounce · pago Polar → stopped_sale
  *   - click  → fu_click  a clicked_at + 2d
  *   - open   → fu_open   a sent_at   + 5d
  *   - resto  → fu_silent a sent_at   + 8d
@@ -40,15 +40,18 @@ export async function backfillFollowUpSchedules(opts?: {
   if (dryRun) {
     const s = await sql`
       SELECT
-        COUNT(*) FILTER (WHERE opted_out = true
-          AND sequence_status IS DISTINCT FROM 'stopped_optout')::int AS optout,
-        COUNT(*) FILTER (WHERE opted_out = false AND status = 'bounced'
-          AND sequence_status IS DISTINCT FROM 'stopped_bounce')::int AS bounce,
-        COUNT(*) FILTER (WHERE opted_out = false AND status <> 'bounced'
-          AND signed_up_at IS NOT NULL
-          AND sequence_status IS DISTINCT FROM 'stopped_sale')::int AS sale
-      FROM public_owner_leads
-      WHERE COALESCE(sequence_status, 'active') NOT IN
+        COUNT(*) FILTER (WHERE p.opted_out = true
+          AND p.sequence_status IS DISTINCT FROM 'stopped_optout')::int AS optout,
+        COUNT(*) FILTER (WHERE p.opted_out = false AND p.status = 'bounced'
+          AND p.sequence_status IS DISTINCT FROM 'stopped_bounce')::int AS bounce,
+        COUNT(*) FILTER (
+          WHERE p.opted_out = false
+            AND t.plan_type IN ('checkin', 'standard', 'pro')
+            AND p.sequence_status IS DISTINCT FROM 'stopped_sale'
+        )::int AS sale
+      FROM public_owner_leads p
+      LEFT JOIN tenants t ON t.id = p.signed_up_tenant_id
+      WHERE COALESCE(p.sequence_status, 'active') NOT IN
         ('stopped_optout', 'stopped_bounce', 'stopped_sale')
     `;
     result.stopped = {
@@ -73,13 +76,26 @@ export async function backfillFollowUpSchedules(opts?: {
         AND COALESCE(sequence_status, 'active') NOT LIKE 'stopped_%'
       RETURNING id
     `;
+    // Solo pago real (Polar checkin/standard/pro). Alta FREE ≠ venta.
     const sale = await sql`
-      UPDATE public_owner_leads
+      UPDATE public_owner_leads p
       SET sequence_status = 'stopped_sale', next_touch_at = NULL, next_touch_kind = NULL,
           updated_at = NOW()
-      WHERE signed_up_at IS NOT NULL
-        AND COALESCE(sequence_status, 'active') NOT LIKE 'stopped_%'
-      RETURNING id
+      FROM tenants t
+      WHERE t.id = p.signed_up_tenant_id
+        AND t.plan_type IN ('checkin', 'standard', 'pro')
+        AND COALESCE(p.sequence_status, 'active') NOT LIKE 'stopped_%'
+      RETURNING p.id
+    `;
+    // Altas FREE mal marcadas como venta → exhausted (lifecycle empuja el pago)
+    await sql`
+      UPDATE public_owner_leads p
+      SET sequence_status = 'exhausted', updated_at = NOW()
+      FROM tenants t
+      WHERE t.id = p.signed_up_tenant_id
+        AND t.plan_type = 'free'
+        AND p.sequence_status = 'stopped_sale'
+        AND p.signed_up_at IS NOT NULL
     `;
     result.stopped = {
       optout: optout.rowCount || 0,

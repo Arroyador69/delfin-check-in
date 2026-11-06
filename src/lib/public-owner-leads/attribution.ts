@@ -1,10 +1,15 @@
 import { sql } from '@/lib/db';
-import { stopSequenceByEmail } from './sequence-db';
+import { maybeEnrollNewTenantInLifecycle } from '@/lib/email-sequences/engine';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-/** Marca lead outreach como dado de alta (prueba gratis / waitlist activate). */
+/**
+ * Marca lead outreach como dado de alta FREE.
+ * NO corta la secuencia como venta: alta gratis ≠ pago.
+ * El stop `stopped_sale` solo ocurre tras Polar activo (webhook).
+ * Sí inscribe lifecycle (trial / upgrade) para empujar Plan Check-in.
+ */
 export async function markPublicOwnerLeadSignedUp(params: {
   email: string;
   tenantId?: string | null;
@@ -42,8 +47,26 @@ export async function markPublicOwnerLeadSignedUp(params: {
             AND signed_up_at IS NULL
           RETURNING id
         `;
-    // Venta atribuida → parar follow-ups (incluso si signed_up_at ya estaba marcado)
-    await stopSequenceByEmail(email, 'stopped_sale');
+
+    // Si ya estaba marcado stopped_sale por bug histórico (alta=venta), reabrir a exhausted
+    // (no reenviar cold/FU; el cobro va por lifecycle upgrade).
+    await sql`
+      UPDATE public_owner_leads
+      SET
+        sequence_status = CASE
+          WHEN sequence_status = 'stopped_sale' THEN 'exhausted'
+          ELSE sequence_status
+        END,
+        updated_at = NOW()
+      WHERE LOWER(TRIM(email)) = ${email}
+        AND sequence_status = 'stopped_sale'
+        AND signed_up_at IS NOT NULL
+    `;
+
+    if (tenantId) {
+      void maybeEnrollNewTenantInLifecycle(tenantId);
+    }
+
     return (result.rowCount || 0) > 0;
   } catch (e) {
     console.warn('[public-owner-leads] markSignedUp:', e instanceof Error ? e.message : e);
