@@ -45,15 +45,15 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Emergency: cola baja → extract más agresivo, sin opendata (anti-timeout)
+  // Lotes cortos: Vercel 120s. Varias invocaciones/hora acumulan hasta MIN_QUEUED.
   const emergency = queued < 150;
   const refill = await refillQueuedStock({
-    target: PUBLIC_OWNER_LEADS_MIN_QUEUED,
-    extractLimit: emergency ? 120 : 80,
+    target: Math.min(PUBLIC_OWNER_LEADS_MIN_QUEUED, queued + (emergency ? 80 : 50)),
+    extractLimit: emergency ? 35 : 25,
     opendataLimit: 0,
     light: true,
-    alertIfStarved: true,
-    starveBelow: 80,
+    alertIfStarved: queued < 40,
+    starveBelow: 40,
   });
 
   return NextResponse.json({
