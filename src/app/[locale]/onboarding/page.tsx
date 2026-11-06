@@ -2100,13 +2100,17 @@ export default function OnboardingPage() {
               >
                 {loading ? t('lite.openingCheckout') : t('lite.upgradeCheckin')}
               </button>
+              <p className="text-xs text-slate-600 text-center leading-relaxed">
+                Activa Check-in (~2€/mes) para el parte de viajeros legal. Puedes
+                entrar al panel gratis y activarlo después desde Ajustes.
+              </p>
               <button
                 type="button"
                 disabled={loading}
                 onClick={() => void finishOutreachLite()}
-                className={`w-full ${BTN_SECONDARY}`}
+                className="w-full text-sm text-slate-500 underline underline-offset-2 py-2 hover:text-slate-700"
               >
-                {loading ? t('lite.entering') : t('lite.goDashboard')}
+                {loading ? t('lite.entering') : 'Entrar al panel sin activar (gratis)'}
               </button>
               <p className="text-xs text-slate-500 text-center">{t('lite.bellNote')}</p>
             </div>
