@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
   );
   const base = appBase();
 
+  // Open/Expired Polar = intent sin pago. Reintentar si nunca se envió recovery
+  // o si el último recovery fue hace ≥3 días (2º empujón).
   const abandoned = await sql`
     SELECT id::text AS id, email,
       polar_last_checkout_context->>'source' AS source
@@ -36,8 +38,12 @@ export async function GET(req: NextRequest) {
       AND plan_type = 'free'
       AND COALESCE(polar_subscription_status, 'none') NOT IN ('active', 'trialing')
       AND email NOT ILIKE '%@delfincheckin.com'
-      AND polar_last_upgrade_intent_at >= NOW() - INTERVAL '45 days'
-      AND COALESCE(config->>'checkout_recovery_at', '') = ''
+      AND polar_last_upgrade_intent_at >= NOW() - INTERVAL '60 days'
+      AND (
+        COALESCE(config->>'checkout_recovery_at', '') = ''
+        OR (config->>'checkout_recovery_at')::timestamptz < NOW() - INTERVAL '3 days'
+      )
+      AND COALESCE(config->>'checkout_recovery_count', '0')::int < 2
     ORDER BY polar_last_upgrade_intent_at DESC
     LIMIT ${max}
   `;
@@ -78,10 +84,16 @@ export async function GET(req: NextRequest) {
     }
     try {
       await sendOutreachMail({ to: email, subject, text, html });
+      const prevCount = await sql`
+        SELECT COALESCE(config->>'checkout_recovery_count', '0')::int AS n
+        FROM tenants WHERE id = ${String(row.id)}::uuid
+      `;
+      const nextCount = Number(prevCount.rows[0]?.n || 0) + 1;
       await sql`
         UPDATE tenants
         SET config = COALESCE(config, '{}'::jsonb) || ${JSON.stringify({
           checkout_recovery_at: new Date().toISOString(),
+          checkout_recovery_count: nextCount,
         })}::jsonb,
             updated_at = NOW()
         WHERE id = ${String(row.id)}::uuid
