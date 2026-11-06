@@ -181,7 +181,8 @@ export async function runPublicOwnerLeadsWaveCron(opts?: {
         const { refillQueuedStock } = await import('./refill-queue');
         refillDeferred = await refillQueuedStock({
           target: PUBLIC_OWNER_LEADS_MIN_QUEUED,
-          extractLimit: 40,
+          // Más extract post-oleada: priorizar NUNCA dejar cola a 0
+          extractLimit: 90,
           opendataLimit: 0,
           light: true,
           alertIfStarved: true,
