@@ -119,3 +119,36 @@ export async function recycleEmptySources(
   `;
   return r.rows.length;
 }
+
+/**
+ * Reabre webs que YA dieron email (para sacar info@ / reservas@ distintos).
+ * Útil cuando pending “virgen” está agotado y la cola cold llega a 0.
+ */
+export async function recycleRichSources(
+  limit = 80,
+  minAgeHours = 24
+): Promise<number> {
+  const sourcesMeta = await sql`SELECT to_regclass('public.public_owner_lead_sources') AS reg`;
+  if (!sourcesMeta.rows[0]?.reg) return 0;
+  const hours = Math.max(0, minAgeHours);
+  const r = await sql`
+    WITH cte AS (
+      SELECT id
+      FROM public_owner_lead_sources
+      WHERE status = 'done'
+        AND COALESCE(emails_found, 0) > 0
+        AND (
+          last_scraped_at IS NULL
+          OR last_scraped_at < NOW() - (${hours}::text || ' hours')::interval
+        )
+      ORDER BY last_scraped_at ASC NULLS FIRST
+      LIMIT ${limit}
+    )
+    UPDATE public_owner_lead_sources s
+    SET status = 'pending', last_error = NULL, updated_at = NOW()
+    FROM cte
+    WHERE s.id = cte.id
+    RETURNING s.id
+  `;
+  return r.rows.length;
+}

@@ -13,6 +13,7 @@ import {
   ensureSpainAgencySourceQueue,
   ensureSpainVacationSourceQueue,
   recycleEmptySources,
+  recycleRichSources,
 } from './ensure-source-queue';
 import { importAllOpenDataToQueue } from './import-opendata';
 import { extractPublicEmailsFromUrl, normalizeUrl } from './extract-web';
@@ -114,6 +115,15 @@ export async function refillQueuedStock(opts?: {
       emergency ? 180 : 80,
       emergency ? 0 : 6
     );
+    // Cola muerta: reabrir webs con email previo para sacar aliases (info@/reservas@)
+    if (queuedBefore < 200 || light) {
+      const rich = await recycleRichSources(
+        emergency ? 100 : 50,
+        emergency ? 12 : 48
+      );
+      recycled += rich;
+      if (rich) errors.push(`recycleRich=${rich}`);
+    }
   } catch (e) {
     errors.push(`seed:${e instanceof Error ? e.message : String(e)}`);
   }
