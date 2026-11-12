@@ -41,8 +41,8 @@ import { isBlockedOutreachHost } from '../../src/lib/public-owner-leads/blocked-
 import { hostSuggestsNonVacation } from '../../src/lib/public-owner-leads/spain-vacation-filter';
 
 const TARGET = Number(process.argv[2] || 400);
-const BATCH = 30;
-const CONC = 6;
+const BATCH = 20;
+const CONC = 3;
 
 function db() {
   const url =
@@ -54,138 +54,194 @@ function db() {
   return neon(url);
 }
 
+async function withRetry<T>(
+  label: string,
+  fn: () => Promise<T>,
+  tries = 5
+): Promise<T> {
+  let last: unknown;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      last = e;
+      const wait = 800 * (i + 1) + Math.floor(Math.random() * 400);
+      console.warn(`[neon-fast] retry ${label} #${i + 1} wait=${wait}ms`);
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+  throw last;
+}
+
 async function main() {
   const sql = db();
   const used = new Set<string>();
-  const already = (await sql`
-    SELECT lower(email) AS e FROM public_owner_leads
-    WHERE status IN ('sent', 'queued', 'new', 'bounced')
-  `) as Array<{ e: string }>;
+  const already = (await withRetry('load-used', () =>
+    sql`
+      SELECT lower(email) AS e FROM public_owner_leads
+      WHERE status IN ('sent', 'queued', 'new', 'bounced')
+    `
+  )) as Array<{ e: string }>;
   for (const row of already) if (row.e) used.add(row.e);
 
-  const q0 = (await sql`
-    SELECT COUNT(*)::int AS n FROM public_owner_leads
-    WHERE status = 'queued' AND opted_out = false
-  `) as Array<{ n: number }>;
+  const q0 = (await withRetry('q0', () =>
+    sql`
+      SELECT COUNT(*)::int AS n FROM public_owner_leads
+      WHERE status = 'queued' AND opted_out = false
+    `
+  )) as Array<{ n: number }>;
   console.log('[neon-fast] start queued', q0[0]?.n, 'used', used.size);
 
   let inserted = 0;
   let processed = 0;
 
-  for (let round = 0; round < 50; round++) {
-    const qNow = (await sql`
-      SELECT COUNT(*)::int AS n FROM public_owner_leads
-      WHERE status = 'queued' AND opted_out = false
-    `) as Array<{ n: number }>;
+  for (let round = 0; round < 80; round++) {
+    const qNow = (await withRetry('qNow', () =>
+      sql`
+        SELECT COUNT(*)::int AS n FROM public_owner_leads
+        WHERE status = 'queued' AND opted_out = false
+      `
+    )) as Array<{ n: number }>;
     const queued = Number(qNow[0]?.n || 0);
     if (queued >= TARGET) {
       console.log('[neon-fast] TARGET', queued);
       break;
     }
 
-    const pending = (await sql`
-      SELECT id::text AS id, url FROM public_owner_lead_sources
-      WHERE status = 'pending'
-        AND url !~* '^https?://([0-9]{1,3}\\.){3}[0-9]{1,3}'
-      ORDER BY created_at DESC
-      LIMIT ${BATCH}
-    `) as Array<{ id: string; url: string }>;
+    const pending = (await withRetry('pending', () =>
+      sql`
+        SELECT id::text AS id, url FROM public_owner_lead_sources
+        WHERE status = 'pending'
+          AND url !~* '^https?://([0-9]{1,3}\\.){3}[0-9]{1,3}'
+        ORDER BY created_at DESC
+        LIMIT ${BATCH}
+      `
+    )) as Array<{ id: string; url: string }>;
 
     if (!pending.length) {
       console.log('[neon-fast] no pending hosts');
       break;
     }
 
+    // Scraping en paralelo; writes a DB en serie (Neon tolera mal bursts).
     for (let i = 0; i < pending.length; i += CONC) {
       const slice = pending.slice(i, i + CONC);
-      await Promise.all(
+      const scraped = await Promise.all(
         slice.map(async (row) => {
           const url = normalizeUrl(String(row.url || ''));
-          processed++;
           if (!url || isBlockedOutreachHost(url) || hostSuggestsNonVacation(url)) {
-            await sql`
-              UPDATE public_owner_lead_sources
-              SET status = 'blocked', last_error = 'blocked-or-non-vacation',
-                  last_scraped_at = NOW(), updated_at = NOW()
-              WHERE id = ${row.id}::uuid
-            `;
-            process.stdout.write('b');
-            return;
+            return { row, kind: 'blocked' as const, reason: 'blocked-or-non-vacation' };
           }
           try {
-            const { leads, blocked, error } = await extractPublicEmailsFromUrl(url);
-            if (blocked) {
-              await sql`
-                UPDATE public_owner_lead_sources
-                SET status = 'blocked', last_error = ${error || 'blocked'},
-                    last_scraped_at = NOW(), updated_at = NOW()
-                WHERE id = ${row.id}::uuid
-              `;
-              process.stdout.write('B');
-              return;
+            const result = await extractPublicEmailsFromUrl(url);
+            if (result.blocked) {
+              return {
+                row,
+                kind: 'blocked' as const,
+                reason: result.error || 'blocked',
+              };
             }
-            let found = 0;
-            for (const lead of leads) {
-              const email = lead.email.toLowerCase();
-              const domain = (
-                lead.domain ||
-                domainFromUrl(lead.source_url) ||
-                ''
-              ).replace(/^www\./, '');
-              if (
-                !isPlausiblePublicEmail(email) ||
-                scoreEmailForSource(email, lead.source_url) < 0
-              ) {
-                continue;
-              }
-              if (used.has(email)) continue;
-              const note = `neon-fast:${new Date().toISOString().slice(0, 10)}`;
-              const ins = (await sql`
-                INSERT INTO public_owner_leads (email, domain, source_url, status, notes, queued_at)
-                VALUES (${email}, ${domain}, ${lead.source_url}, 'queued', ${note}, NOW())
-                ON CONFLICT (email) DO NOTHING
-                RETURNING id::text AS id
-              `) as Array<{ id: string }>;
-              if (ins[0]?.id) {
-                found++;
-                inserted++;
-                used.add(email);
-              }
-            }
-            await sql`
-              UPDATE public_owner_lead_sources
-              SET status = 'done', emails_found = ${found},
-                  last_scraped_at = NOW(), updated_at = NOW()
-              WHERE id = ${row.id}::uuid
-            `;
-            process.stdout.write(found ? '+' : '.');
+            return { row, kind: 'ok' as const, leads: result.leads };
           } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            await sql`
-              UPDATE public_owner_lead_sources
-              SET status = 'failed', last_error = ${msg.slice(0, 400)},
-                  last_scraped_at = NOW(), updated_at = NOW()
-              WHERE id = ${row.id}::uuid
-            `;
-            process.stdout.write('x');
+            return {
+              row,
+              kind: 'fail' as const,
+              reason: e instanceof Error ? e.message : String(e),
+            };
           }
         })
       );
+
+      for (const item of scraped) {
+        processed++;
+        if (item.kind === 'blocked') {
+          await withRetry(`block-${item.row.id}`, () =>
+            sql`
+              UPDATE public_owner_lead_sources
+              SET status = 'blocked', last_error = ${item.reason},
+                  last_scraped_at = NOW(), updated_at = NOW()
+              WHERE id = ${item.row.id}::uuid
+            `
+          );
+          process.stdout.write('b');
+          continue;
+        }
+        if (item.kind === 'fail') {
+          await withRetry(`fail-${item.row.id}`, () =>
+            sql`
+              UPDATE public_owner_lead_sources
+              SET status = 'failed', last_error = ${item.reason.slice(0, 400)},
+                  last_scraped_at = NOW(), updated_at = NOW()
+              WHERE id = ${item.row.id}::uuid
+            `
+          );
+          process.stdout.write('x');
+          continue;
+        }
+
+        let found = 0;
+        for (const lead of item.leads) {
+          const email = lead.email.toLowerCase();
+          const domain = (
+            lead.domain ||
+            domainFromUrl(lead.source_url) ||
+            ''
+          ).replace(/^www\./, '');
+          if (
+            !isPlausiblePublicEmail(email) ||
+            scoreEmailForSource(email, lead.source_url) < 0
+          ) {
+            continue;
+          }
+          if (used.has(email)) continue;
+          const note = `neon-fast:${new Date().toISOString().slice(0, 10)}`;
+          const ins = (await withRetry(`ins-${email}`, () =>
+            sql`
+              INSERT INTO public_owner_leads (email, domain, source_url, status, notes, queued_at)
+              VALUES (${email}, ${domain}, ${lead.source_url}, 'queued', ${note}, NOW())
+              ON CONFLICT (email) DO NOTHING
+              RETURNING id::text AS id
+            `
+          )) as Array<{ id: string }>;
+          if (ins[0]?.id) {
+            found++;
+            inserted++;
+            used.add(email);
+          } else {
+            used.add(email);
+          }
+        }
+        await withRetry(`done-${item.row.id}`, () =>
+          sql`
+            UPDATE public_owner_lead_sources
+            SET status = 'done', emails_found = ${found},
+                last_scraped_at = NOW(), updated_at = NOW()
+            WHERE id = ${item.row.id}::uuid
+          `
+        );
+        process.stdout.write(found ? '+' : '.');
+      }
+      // pequeña pausa entre lotes para no saturar Neon
+      await new Promise((r) => setTimeout(r, 200));
     }
 
-    const qEnd = (await sql`
-      SELECT COUNT(*)::int AS n FROM public_owner_leads
-      WHERE status = 'queued' AND opted_out = false
-    `) as Array<{ n: number }>;
+    const qEnd = (await withRetry('qEnd', () =>
+      sql`
+        SELECT COUNT(*)::int AS n FROM public_owner_leads
+        WHERE status = 'queued' AND opted_out = false
+      `
+    )) as Array<{ n: number }>;
     console.log(
       `\n[neon-fast] round ${round + 1} processed=${processed} inserted=${inserted} queued=${qEnd[0]?.n}`
     );
   }
 
-  const finalQ = (await sql`
-    SELECT COUNT(*)::int AS n FROM public_owner_leads
-    WHERE status = 'queued' AND opted_out = false
-  `) as Array<{ n: number }>;
+  const finalQ = (await withRetry('final', () =>
+    sql`
+      SELECT COUNT(*)::int AS n FROM public_owner_leads
+      WHERE status = 'queued' AND opted_out = false
+    `
+  )) as Array<{ n: number }>;
   console.log(
     JSON.stringify(
       { queued: finalQ[0]?.n, inserted, processed, target: TARGET },
