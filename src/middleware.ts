@@ -572,11 +572,19 @@ export async function middleware(req: NextRequest) {
     localeFromPath &&
     locales.some((l) => pathname === `/${l}/subscribe`);
 
+  /** Calendario comercial (CTA mails) sin sesión. */
+  const isPublicSalesCallPage = locales.some(
+    (l) =>
+      pathname === `/${l}/reserva-llamada` ||
+      pathname.startsWith(`/${l}/reserva-llamada/`)
+  );
+
   // Rutas completamente públicas - no requieren autenticación
   const isPublicRoute = (
     pathname === '/admin-login' ||
     pathname === '/forgot-password' ||
     isPublicSubscribePage ||
+    isPublicSalesCallPage ||
     pathname.startsWith('/api/polar/checkout') ||
     pathname.startsWith('/api/polar/subscribe-redirect') ||
     pathname.startsWith('/book/') ||
