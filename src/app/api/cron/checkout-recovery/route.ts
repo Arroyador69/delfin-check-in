@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
     const email = String(row.email || '').toLowerCase();
     if (!email.includes('@')) continue;
     const upgradeUrl = `${base}/es/upgrade-plan?plan=checkin&source=checkout_recovery&email=${encodeURIComponent(email)}`;
+    const callUrl = `${base}/es/reserva-llamada?email=${encodeURIComponent(email)}&src=checkout_recovery`;
     const subject = 'Te quedó el Plan Check-in a medias (~2€/mes)';
     const text = [
       'Hola,',
@@ -63,6 +64,9 @@ export async function GET(req: NextRequest) {
       '',
       'Completa aquí (1 minuto):',
       upgradeUrl,
+      '',
+      '¿Prefieres que te lo mostremos en una llamada de 15 min?',
+      callUrl,
       '',
       'Si no te interesa, ignora este email.',
       '',
@@ -75,6 +79,7 @@ export async function GET(req: NextRequest) {
 <p>Hola,</p>
 <p>Abriste el pago de <strong>Plan Check-in</strong> y se quedó a medias. Con ~2€/mes el parte a SES Hospedajes se envía solo.</p>
 <p style="text-align:center;margin:28px 0;"><a href="${upgradeUrl.replace(/"/g, '&quot;')}" style="background:#0284c7;color:#fff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:10px;display:inline-block;">Completar Plan Check-in</a></p>
+<p style="font-size:14px;color:#334155;">¿Prefieres una <strong>llamada de 15 min</strong> con el equipo comercial? <a href="${callUrl.replace(/"/g, '&quot;')}" style="color:#0284c7;font-weight:700;">Reservar hueco</a> · L–V · Madrid · puntual</p>
 <p style="font-size:13px;color:#64748b;">Si no te interesa, ignora este email.</p>
 </td></tr></table></body></html>`;
 
