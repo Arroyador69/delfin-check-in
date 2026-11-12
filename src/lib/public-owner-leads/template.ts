@@ -5,12 +5,34 @@
  *
  * Buenas prácticas (Reply / SendIQ 2025):
  * - No decir de dónde salió el email ni “listas” (quema confianza).
- * - Valor + resultado, 1 solo CTA grande, corto y escaneable.
+ * - Valor + resultado, CTA registro + CTA sutil llamada 15 min.
  * - SES Hospedajes obligatorio + más valor (limpieza, reservas directas, menos comisiones OTA).
  * - Lenguaje de cliente: «registro / pruébalo gratis», nunca «onboarding».
  */
 
+import { salesCallBookingUrl } from '@/lib/sales-calls/constants';
+
 export type ColdEmailAudience = 'owner' | 'agency' | 'hotel';
+
+function callBookingLinks(email: string, source: string): {
+  url: string;
+  textBlock: string;
+  htmlBlock: string;
+} {
+  const url = salesCallBookingUrl({ email, source });
+  const textBlock = [
+    `¿Prefieres que te lo mostremos en una llamada de 15 min con el equipo comercial?`,
+    `Reserva hueco (L–V, Madrid · puntual):`,
+    url,
+  ].join('\n');
+  const htmlBlock = `
+              <p style="margin:18px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#334155;">
+                ¿Prefieres que te lo mostremos en <strong>15 minutos</strong> con el equipo comercial?
+                <a href="${escapeAttr(url)}" style="color:#0284c7;font-weight:700;text-decoration:underline;">Reservar llamada</a>
+                <span style="color:#64748b;"> · L–V · hora Madrid · puntual</span>
+              </p>`;
+  return { url, textBlock, htmlBlock };
+}
 
 export interface ColdEmailParams {
   toEmail: string;
@@ -96,6 +118,7 @@ export function buildColdOutreachEmail(params: ColdEmailParams): {
     params.signupUrl ||
     process.env.OUTREACH_SIGNUP_URL?.trim() ||
     'https://delfincheckin.com/parte-viajeros/#empezar';
+  const call = callBookingLinks(params.toEmail, 'outreach_cold');
   const sender = params.senderName || 'Equipo Delfín Check-in';
   const year = new Date().getFullYear();
   const socials = getOutreachSocialLinks();
@@ -177,6 +200,8 @@ Gratis (sin tarjeta): formulario, panel, limpiezas y envío manual a SES Hospeda
     ``,
     `Regístrate en 1 minuto (gratis, sin tarjeta):`,
     signup,
+    ``,
+    call.textBlock,
     ``,
     socialText,
     ``,
@@ -338,6 +363,7 @@ Gratis (sin tarjeta): formulario, panel, limpiezas y envío manual a SES Hospeda
               <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.4;color:#94a3b8;">
                 Si el botón no funciona: <a href="${escapeAttr(signup)}" style="color:#0284c7;word-break:break-all;">abrir enlace</a>
               </p>
+              ${call.htmlBlock}
             </td>
           </tr>
 
@@ -408,6 +434,7 @@ export function buildFollowUpOutreachEmail(params: FollowUpEmailParams): {
     params.domain ||
     (isAgency ? 'vuestra gestora' : isHotel ? 'vuestro hotel' : 'tu alojamiento');
   const signup = params.signupUrl;
+  const call = callBookingLinks(params.toEmail, `outreach_${params.touch}`);
   const sender = 'Equipo Delfín Check-in';
   const year = new Date().getFullYear();
 
@@ -527,6 +554,8 @@ export function buildFollowUpOutreachEmail(params: FollowUpEmailParams): {
     ...paragraphs.flatMap((p) => [p, ``]),
     `${ctaLabel}:`,
     signup,
+    ``,
+    call.textBlock,
     ...(priceLine ? [``, priceLine] : []),
     ``,
     optOutIntro,
@@ -600,6 +629,7 @@ export function buildFollowUpOutreachEmail(params: FollowUpEmailParams): {
               </p>`
                   : ''
               }
+              ${call.htmlBlock}
             </td>
           </tr>
           <tr>
