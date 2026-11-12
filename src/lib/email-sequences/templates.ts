@@ -44,9 +44,13 @@ function firstName(fullName: string): string {
   return n || 'Propietario';
 }
 
+const LIFECYCLE_CALL_URL =
+  'https://admin.delfincheckin.com/es/reserva-llamada?src=lifecycle';
+
 function wrapEmail(body: string, unsubscribeUrl: string): string {
   const unsub = escAttr(unsubscribeUrl);
   const unsubPlain = esc(unsubscribeUrl);
+  const callUrl = escAttr(LIFECYCLE_CALL_URL);
   return `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -60,6 +64,14 @@ function wrapEmail(body: string, unsubscribeUrl: string): string {
           </td>
         </tr>
         ${body}
+        <tr>
+          <td style="padding:8px 32px 20px 32px;font-size:14px;line-height:1.55;color:#334155;text-align:center;">
+            <p style="margin:0;">¿Dudas? Reserva una <strong>llamada de 15 min</strong> con el equipo comercial ·
+              <a href="${callUrl}" style="color:#2563eb;font-weight:700;">Elegir horario</a>
+              <span style="color:#64748b;"> · L–V · Madrid · puntual</span>
+            </p>
+          </td>
+        </tr>
         <!-- LIFECYCLE_ANTIVIRUS_BLOCK -->
         <tr>
           <td style="padding:24px 32px 28px 32px;border-top:1px solid #e2e8f0;font-size:12px;line-height:1.6;color:#64748b;text-align:center;">
