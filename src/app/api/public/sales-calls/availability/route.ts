@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
       slotStepMinutes: SALES_CALL_SLOT_STEP_MIN,
       timezone: 'Europe/Madrid',
       windows: 'L–V 09:00–14:00 y 16:00–19:00',
-      note: 'La llamada es puntual (15 min). Entre huecos hay 30 min.',
+      note: 'La llamada es puntual (15 min). Entre inicios hay 45 min (30 min de margen).',
       days,
     });
   } catch (e) {

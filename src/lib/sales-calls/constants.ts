@@ -2,8 +2,13 @@
 
 export const SALES_CALL_PROJECT = 'delfin' as const;
 export const SALES_CALL_DURATION_MIN = 15;
-/** Separación entre inicios de hueco (≥30 min para no pillar dedos). */
-export const SALES_CALL_SLOT_STEP_MIN = 30;
+/**
+ * Separación entre inicios de hueco.
+ * Igual que NFCTap: 15 min llamada + 30 min margen = 45 min entre inicios.
+ */
+export const SALES_CALL_BUFFER_MIN = 30;
+export const SALES_CALL_SLOT_STEP_MIN =
+  SALES_CALL_DURATION_MIN + SALES_CALL_BUFFER_MIN; // 45
 export const SALES_CALL_TZ = 'Europe/Madrid';
 
 /** Mañana: 09:00–14:00 (último inicio 13:30 → fin 13:45). */

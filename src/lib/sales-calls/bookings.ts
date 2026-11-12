@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { sql } from '@/lib/db';
 import {
+  SALES_CALL_BUFFER_MIN,
   SALES_CALL_DURATION_MIN,
   SALES_CALL_PROJECT,
   salesCallMeetingUrl,
@@ -48,29 +49,36 @@ export async function listAvailableSlots(opts?: {
       AND start_at < ${toIso}::timestamptz
       AND end_at > ${fromIso}::timestamptz
   `;
-  /** Intervalos ocupados: solo bloquean el hueco que solapa (no el día entero). */
+  /** Ocupado = llamada + margen (no cierra el día entero). */
   const busyIntervals: Array<{ startMs: number; endMs: number }> = [];
-  for (const row of local.rows) {
-    const s = new Date(String(row.start_at)).getTime();
-    const e = new Date(String(row.end_at)).getTime();
-    if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
-      busyIntervals.push({ startMs: s, endMs: e });
+  const pushBusy = (startMs: number, endMs: number) => {
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+      return;
     }
+    busyIntervals.push({
+      startMs,
+      endMs: Math.max(
+        endMs + SALES_CALL_BUFFER_MIN * 60_000,
+        startMs + SALES_CALL_DURATION_MIN * 60_000 + SALES_CALL_BUFFER_MIN * 60_000
+      ),
+    });
+  };
+  for (const row of local.rows) {
+    pushBusy(
+      new Date(String(row.start_at)).getTime(),
+      new Date(String(row.end_at)).getTime()
+    );
   }
 
   const peer = await fetchPeerBusy(fromIso, toIso);
   for (const b of peer) {
     const s = new Date(b.startAt).getTime();
-    const e = new Date(b.endAt).getTime();
-    if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
-      busyIntervals.push({ startMs: s, endMs: e });
-    } else if (Number.isFinite(s)) {
-      // Peer solo manda start → bloquea 15 min
-      busyIntervals.push({
-        startMs: s,
-        endMs: s + SALES_CALL_DURATION_MIN * 60_000,
-      });
+    let e = new Date(b.endAt).getTime();
+    if (!Number.isFinite(s)) continue;
+    if (!Number.isFinite(e) || e <= s) {
+      e = s + SALES_CALL_DURATION_MIN * 60_000;
     }
+    pushBusy(s, e);
   }
 
   const byDay = new Map<string, AvailabilityDay>();

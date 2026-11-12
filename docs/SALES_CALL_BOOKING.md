@@ -3,7 +3,7 @@
 ## Qué ve el cliente
 - Página pública `https://delfincheckin.com/reserva-llamada/` (landing; APIs en admin)
 - L–V · 09:00–14:00 y 16:00–19:00 (Europe/Madrid)
-- Huecos cada **30 min**, llamada de **15 min**, puntualidad estricta
+- Huecos cada **45 min** (15 llamada + 30 margen), igual que NFCTap; puntualidad estricta
 - Formulario: nombre, email, teléfono opcional, comentarios
 - **No** se menciona sincronización con ningún otro proyecto
 
