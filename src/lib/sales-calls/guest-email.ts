@@ -1,9 +1,7 @@
 import { sendEmail } from '@/lib/email';
-import { salesCallPublicBase } from './constants';
+import { salesCallManageUrl } from './constants';
 
-export function salesCallManageUrl(token: string): string {
-  return `${salesCallPublicBase()}/es/reserva-llamada/gestionar?token=${encodeURIComponent(token)}`;
-}
+export { salesCallManageUrl };
 
 function wrap(body: string): string {
   return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">

@@ -11,13 +11,16 @@ export const SALES_CALL_MORNING = { startHour: 9, startMin: 0, endHour: 14, endM
 /** Tarde: 16:00–19:00 (último inicio 18:30 → fin 18:45). */
 export const SALES_CALL_AFTERNOON = { startHour: 16, startMin: 0, endHour: 19, endMin: 0 };
 
-export const SALES_CALL_BOOKING_PATH = '/es/reserva-llamada';
+/** Página pública en la landing (no admin). */
+export const SALES_CALL_BOOKING_PATH = '/reserva-llamada/';
+export const SALES_CALL_MANAGE_PATH = '/reserva-llamada/gestionar/';
 
+/** Base marketing pública para CTAs de mail. */
 export function salesCallPublicBase(): string {
   return String(
-    process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      'https://admin.delfincheckin.com'
+    process.env.SALES_CALL_PUBLIC_BASE ||
+      process.env.NEXT_PUBLIC_SALES_CALL_PUBLIC_BASE ||
+      'https://delfincheckin.com'
   ).replace(/\/+$/, '');
 }
 
@@ -28,6 +31,12 @@ export function salesCallBookingUrl(opts?: {
   const u = new URL(`${salesCallPublicBase()}${SALES_CALL_BOOKING_PATH}`);
   if (opts?.email) u.searchParams.set('email', opts.email.trim().toLowerCase());
   if (opts?.source) u.searchParams.set('src', opts.source);
+  return u.toString();
+}
+
+export function salesCallManageUrl(token: string): string {
+  const u = new URL(`${salesCallPublicBase()}${SALES_CALL_MANAGE_PATH}`);
+  u.searchParams.set('token', token);
   return u.toString();
 }
 

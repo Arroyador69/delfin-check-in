@@ -1,23 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import {
   cancelSalesCallByToken,
   getBookingByManageToken,
 } from '@/lib/sales-calls/bookings';
 import { salesCallBookingUrl } from '@/lib/sales-calls/constants';
+import {
+  jsonWithSalesCallCors,
+  salesCallOptions,
+} from '@/lib/sales-calls/cors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+export async function OPTIONS(req: NextRequest) {
+  return salesCallOptions(req);
+}
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token') || '';
   const booking = await getBookingByManageToken(token);
   if (!booking) {
-    return NextResponse.json(
+    return jsonWithSalesCallCors(
+      req,
       { success: false, error: 'Reserva no encontrada.' },
       { status: 404 }
     );
   }
-  return NextResponse.json({
+  return jsonWithSalesCallCors(req, {
     success: true,
     booking: {
       status: booking.status,
@@ -40,19 +49,21 @@ export async function POST(req: NextRequest) {
   const token = String(body.token || '');
   const action = String(body.action || 'cancel');
   if (action !== 'cancel') {
-    return NextResponse.json(
+    return jsonWithSalesCallCors(
+      req,
       { success: false, error: 'Acción no válida.' },
       { status: 400 }
     );
   }
   const result = await cancelSalesCallByToken(token);
   if (!result.ok) {
-    return NextResponse.json(
+    return jsonWithSalesCallCors(
+      req,
       { success: false, error: result.error },
       { status: 400 }
     );
   }
-  return NextResponse.json({
+  return jsonWithSalesCallCors(req, {
     success: true,
     booking: {
       status: 'cancelled',

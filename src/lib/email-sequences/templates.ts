@@ -45,7 +45,7 @@ function firstName(fullName: string): string {
 }
 
 const LIFECYCLE_CALL_URL =
-  'https://admin.delfincheckin.com/es/reserva-llamada?src=lifecycle';
+  'https://delfincheckin.com/reserva-llamada/?src=lifecycle';
 
 function wrapEmail(body: string, unsubscribeUrl: string): string {
   const unsub = escAttr(unsubscribeUrl);

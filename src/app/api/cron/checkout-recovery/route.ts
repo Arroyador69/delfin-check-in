@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     const email = String(row.email || '').toLowerCase();
     if (!email.includes('@')) continue;
     const upgradeUrl = `${base}/es/upgrade-plan?plan=checkin&source=checkout_recovery&email=${encodeURIComponent(email)}`;
-    const callUrl = `${base}/es/reserva-llamada?email=${encodeURIComponent(email)}&src=checkout_recovery`;
+    const callUrl = `https://delfincheckin.com/reserva-llamada/?email=${encodeURIComponent(email)}&src=checkout_recovery`;
     const subject = 'Te quedó el Plan Check-in a medias (~2€/mes)';
     const text = [
       'Hola,',

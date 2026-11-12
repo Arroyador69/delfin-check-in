@@ -1,9 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { bookSalesCall } from '@/lib/sales-calls/bookings';
+import {
+  jsonWithSalesCallCors,
+  salesCallOptions,
+} from '@/lib/sales-calls/cors';
 import { formatSlotMadrid } from '@/lib/sales-calls/slots';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+export async function OPTIONS(req: NextRequest) {
+  return salesCallOptions(req);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,14 +29,15 @@ export async function POST(req: NextRequest) {
     });
 
     if (!result.ok) {
-      return NextResponse.json(
+      return jsonWithSalesCallCors(
+        req,
         { success: false, error: result.error },
         { status: 400 }
       );
     }
 
     const fmt = formatSlotMadrid(new Date(result.startAt));
-    return NextResponse.json({
+    return jsonWithSalesCallCors(req, {
       success: true,
       booking: {
         id: result.id,
@@ -41,7 +50,8 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     console.error('[sales-calls/book]', e);
-    return NextResponse.json(
+    return jsonWithSalesCallCors(
+      req,
       { success: false, error: 'No se pudo completar la reserva' },
       { status: 500 }
     );

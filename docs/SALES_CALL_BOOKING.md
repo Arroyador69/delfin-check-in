@@ -1,7 +1,7 @@
 # Reservas de llamada comercial (Delfín ↔ NFCTap)
 
 ## Qué ve el cliente
-- Página `/es/reserva-llamada`
+- Página pública `https://delfincheckin.com/reserva-llamada/` (landing; APIs en admin)
 - L–V · 09:00–14:00 y 16:00–19:00 (Europe/Madrid)
 - Huecos cada **30 min**, llamada de **15 min**, puntualidad estricta
 - Formulario: nombre, email, teléfono opcional, comentarios
@@ -22,7 +22,7 @@ TELEGRAM_WAITLIST_CHAT_ID=...
 3. NFCTap debe implementar el mismo contrato (inverso: peer = admin.delfincheckin.com).
 
 ## Mails
-Cold + FU outreach incluyen CTA sutil «Reservar llamada» → `/es/reserva-llamada?email=&src=`.
+Cold + FU outreach incluyen CTA sutil «Reservar llamada» → `https://delfincheckin.com/reserva-llamada/?email=&src=`.
 Recovery checkout Polar también.
 
 ## Telegram
@@ -34,4 +34,4 @@ Recordatorio al equipo ~1 h antes. Aviso si el cliente cancela.
 2. **Recordatorio ~1 h antes** (cron `/api/cron/sales-call-reminders` cada 15 min).
 
 ## Gestionar
-`/es/reserva-llamada/gestionar?token=…` → cancelar o cambiar de hora (libera hueco + sync peer).
+`https://delfincheckin.com/reserva-llamada/gestionar/?token=…` → cancelar o cambiar de hora (libera hueco + sync peer).
