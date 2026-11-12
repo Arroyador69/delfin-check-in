@@ -50,6 +50,24 @@ type OpenRecoveryPanel = {
   eligibleBacklog?: number;
 };
 
+type SalesCallPanel = {
+  confirmedUpcoming?: number;
+  bookedToday?: number;
+  bookedWeek?: number;
+  cancelledWeek?: number;
+  upcoming?: Array<{
+    id: string;
+    name: string;
+    email: string;
+    source: string | null;
+    status: string;
+    startAt: string;
+    dateLabel: string;
+    timeLabel: string;
+    comments: string | null;
+  }>;
+};
+
 type Lead = {
   id: string;
   email: string;
@@ -130,6 +148,7 @@ export default function PublicOwnerLeadsAdminPage() {
   const [paused, setPaused] = useState(false);
   const [followup, setFollowup] = useState<FollowUpPanel | null>(null);
   const [openRecovery, setOpenRecovery] = useState<OpenRecoveryPanel | null>(null);
+  const [salesCalls, setSalesCalls] = useState<SalesCallPanel | null>(null);
   const [recoveryCap, setRecoveryCap] = useState(250);
   const [stats, setStats] = useState<Stats>({});
   const [today, setToday] = useState<Today>({});
@@ -191,6 +210,7 @@ export default function PublicOwnerLeadsAdminPage() {
       setPaused(Boolean(data.paused));
       setFollowup(data.followup || null);
       setOpenRecovery(data.open_recovery || null);
+      setSalesCalls(data.sales_calls || null);
       setRecoveryCap(Number(data.recovery_daily_cap || data.system?.recovery_cap || 250));
       setWavesStillRun(
         data.waves_still_run != null
@@ -622,6 +642,72 @@ export default function PublicOwnerLeadsAdminPage() {
                 <MetricCard label="Recovery agotado" value={openRecovery?.exhausted} />
                 <MetricCard label="Elegibles" value={openRecovery?.eligibleBacklog} />
               </div>
+            </section>
+
+            <section className="rounded-2xl border border-cyan-200/80 bg-gradient-to-br from-cyan-50/80 to-sky-50/40 p-5 shadow-sm">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h2 className="text-sm font-semibold text-cyan-950">
+                    Llamadas comerciales (15 min)
+                  </h2>
+                  <p className="mt-0.5 text-xs text-cyan-900/80">
+                    Quien reservó fecha/hora desde el mail o la landing · estilo calendario sync.
+                  </p>
+                </div>
+                <a
+                  href="https://delfincheckin.com/reserva-llamada/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-bold px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-950 hover:bg-cyan-200"
+                >
+                  Ver página pública →
+                </a>
+              </div>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <MetricCard
+                  label="Próximas confirmadas"
+                  value={salesCalls?.confirmedUpcoming}
+                  accent
+                />
+                <MetricCard label="Reservadas hoy" value={salesCalls?.bookedToday} />
+                <MetricCard label="Esta semana" value={salesCalls?.bookedWeek} />
+                <MetricCard label="Canceladas (7d)" value={salesCalls?.cancelledWeek} />
+              </div>
+              {(salesCalls?.upcoming?.length || 0) > 0 ? (
+                <div className="mt-4 overflow-x-auto rounded-xl border border-cyan-100 bg-white/80">
+                  <table className="min-w-full text-xs">
+                    <thead className="bg-cyan-50/80 text-cyan-900">
+                      <tr>
+                        <th className="text-left font-semibold px-3 py-2">Cuándo</th>
+                        <th className="text-left font-semibold px-3 py-2">Nombre</th>
+                        <th className="text-left font-semibold px-3 py-2">Email</th>
+                        <th className="text-left font-semibold px-3 py-2">Origen</th>
+                        <th className="text-left font-semibold px-3 py-2">Comentarios</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(salesCalls?.upcoming || []).map((b) => (
+                        <tr key={b.id} className="border-t border-cyan-50">
+                          <td className="px-3 py-2 whitespace-nowrap font-semibold text-slate-900">
+                            {b.dateLabel} · {b.timeLabel}
+                          </td>
+                          <td className="px-3 py-2 text-slate-800">{b.name}</td>
+                          <td className="px-3 py-2 text-slate-600">{b.email}</td>
+                          <td className="px-3 py-2 text-slate-500">{b.source || '—'}</td>
+                          <td className="px-3 py-2 text-slate-500 max-w-[220px] truncate">
+                            {b.comments || '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-cyan-900/70">
+                  Aún no hay llamadas confirmadas próximas. Cuando alguien reserve desde el CTA del
+                  mail, saldrá aquí con fecha y hora.
+                </p>
+              )}
             </section>
 
             <section className="rounded-2xl border border-sky-100 bg-sky-50/60 px-5 py-4 text-sm text-slate-700">

@@ -365,6 +365,18 @@ export async function GET(req: NextRequest) {
       openRecovery = null;
     }
 
+    let salesCalls: Awaited<
+      ReturnType<typeof import('@/lib/sales-calls/stats').fetchSalesCallDashboardStats>
+    > | null = null;
+    try {
+      const { fetchSalesCallDashboardStats } = await import(
+        '@/lib/sales-calls/stats'
+      );
+      salesCalls = await fetchSalesCallDashboardStats();
+    } catch {
+      salesCalls = null;
+    }
+
     const todayRow = (today.rows[0] || {}) as Record<string, number>;
 
     return NextResponse.json({
@@ -409,6 +421,7 @@ export async function GET(req: NextRequest) {
       },
       followup: fu,
       open_recovery: openRecovery,
+      sales_calls: salesCalls,
       outreach_provider: getOutreachProviderInfo(),
       stats: { ...st, open_rate_pct: openRate, click_rate_pct: clickRate, signup_rate_pct: signupRate },
       today: {

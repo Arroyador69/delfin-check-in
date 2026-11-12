@@ -31,6 +31,8 @@ export type CaptacionDayStats = {
   queued: number;
   dailyCap: number;
   signupGoal: number;
+  callsBookedToday?: number;
+  callsUpcoming?: number;
 };
 
 const WAVE_TITLE: Record<CaptacionWaveLabel, string> = {
@@ -75,6 +77,20 @@ export async function fetchCaptacionDayStats(): Promise<CaptacionDayStats | null
     FROM public_owner_leads
   `;
   const row = o.rows[0] || {};
+
+  let callsBookedToday = 0;
+  let callsUpcoming = 0;
+  try {
+    const { fetchSalesCallDashboardStats } = await import(
+      '@/lib/sales-calls/stats'
+    );
+    const calls = await fetchSalesCallDashboardStats();
+    callsBookedToday = calls.bookedToday;
+    callsUpcoming = calls.confirmedUpcoming;
+  } catch {
+    /* tabla puede no existir aún */
+  }
+
   return {
     sent: Number(row.sent || 0),
     opened: Number(row.opened || 0),
@@ -84,6 +100,8 @@ export async function fetchCaptacionDayStats(): Promise<CaptacionDayStats | null
     queued: Number(row.queued || 0),
     dailyCap: PUBLIC_OWNER_LEADS_DAILY_HARD_CAP,
     signupGoal: PUBLIC_OWNER_SIGNUPS_DAILY_GOAL,
+    callsBookedToday,
+    callsUpcoming,
   };
 }
 
@@ -128,7 +146,14 @@ export function formatCaptacionWaveTelegram(opts: {
   msg += `• Abiertos: <b>${stats.opened}</b>\n`;
   msg += `• Clicks: <b>${stats.clicked}</b>\n`;
   msg += `• Undelivered: <b>${stats.bounced}</b>\n`;
-  msg += `• Cola lista: <b>${stats.queued}</b>\n\n`;
+  msg += `• Cola lista: <b>${stats.queued}</b>\n`;
+  if (
+    typeof stats.callsBookedToday === 'number' ||
+    typeof stats.callsUpcoming === 'number'
+  ) {
+    msg += `• Llamadas: hoy <b>${stats.callsBookedToday ?? 0}</b> · próximas <b>${stats.callsUpcoming ?? 0}</b>\n`;
+  }
+  msg += `\n`;
 
   msg += `🎯 <b>Objetivo altas: ${stats.signedUp}/${stats.signupGoal}</b> — ${
     goalOk ? 'CUMPLIDA ✅' : 'pendiente ⚠️'
