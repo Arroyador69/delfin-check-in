@@ -81,6 +81,35 @@ export async function mirrorBookingToPeer(opts: {
   }
 }
 
+/** Libera el espejo en el peer (cancelación). */
+export async function mirrorCancelToPeer(opts: {
+  remoteId: string;
+  startAt?: string;
+}): Promise<boolean> {
+  const base = peerBase();
+  const secret = syncSecret();
+  if (!base || !secret) return true;
+
+  try {
+    const res = await fetch(`${base}/api/public/sales-calls/peer-busy`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Sales-Call-Sync': secret,
+      },
+      body: JSON.stringify({
+        remoteId: opts.remoteId,
+        startAt: opts.startAt,
+        action: 'cancel',
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export function authorizeSalesCallSync(req: Request): boolean {
   const secret = syncSecret();
   if (!secret) return false;

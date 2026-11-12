@@ -109,6 +109,11 @@ export function SalesCallBookingClient({ initialEmail = '', source }: Props) {
           Llamada de <strong>15 minutos</strong> (hora de Madrid). Es puntual:
           empezamos a la hora en punto porque el día va lleno de citas.
         </p>
+        <p className="text-sm text-slate-600 leading-relaxed">
+          Te hemos enviado un <strong>email de confirmación</strong> con el
+          enlace Zoom y cómo <strong>cambiar de hora o cancelar</strong>. Una
+          hora antes recibirás un recordatorio.
+        </p>
         {done.meetingUrl && !done.meetingUrl.startsWith('Te enviaremos') ? (
           <a
             href={done.meetingUrl}
@@ -118,11 +123,7 @@ export function SalesCallBookingClient({ initialEmail = '', source }: Props) {
           >
             Abrir videollamada
           </a>
-        ) : (
-          <p className="text-sm text-slate-600">
-            Te confirmaremos el enlace de la videollamada por email.
-          </p>
-        )}
+        ) : null}
       </div>
     );
   }

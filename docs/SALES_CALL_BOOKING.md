@@ -27,3 +27,11 @@ Recovery checkout Polar también.
 
 ## Telegram
 Cada reserva envía aviso con fecha, hora Madrid, nombre, email, comentarios y enlace reunión.
+Recordatorio al equipo ~1 h antes. Aviso si el cliente cancela.
+
+## Email al cliente (Zoho/SMTP ya configurado)
+1. **Confirmación** al reservar: fecha, Zoom, enlace gestionar (cambiar/cancelar).
+2. **Recordatorio ~1 h antes** (cron `/api/cron/sales-call-reminders` cada 15 min).
+
+## Gestionar
+`/es/reserva-llamada/gestionar?token=…` → cancelar o cambiar de hora (libera hueco + sync peer).

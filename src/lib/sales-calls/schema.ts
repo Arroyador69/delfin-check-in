@@ -19,11 +19,15 @@ export async function ensureSalesCallBookingsSchema(): Promise<void> {
       source TEXT,
       status TEXT NOT NULL DEFAULT 'confirmed',
       peer_mirror_id TEXT,
+      manage_token TEXT,
+      reminder_sent_at TIMESTAMPTZ,
       metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
+  await sql`ALTER TABLE sales_call_bookings ADD COLUMN IF NOT EXISTS manage_token TEXT`;
+  await sql`ALTER TABLE sales_call_bookings ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ`;
   await sql`
     CREATE UNIQUE INDEX IF NOT EXISTS sales_call_bookings_start_unique
       ON sales_call_bookings (start_at)
@@ -33,6 +37,11 @@ export async function ensureSalesCallBookingsSchema(): Promise<void> {
     CREATE INDEX IF NOT EXISTS sales_call_bookings_range_idx
       ON sales_call_bookings (start_at, end_at)
       WHERE status = 'confirmed'
+  `;
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS sales_call_bookings_manage_token_uidx
+      ON sales_call_bookings (manage_token)
+      WHERE manage_token IS NOT NULL
   `;
   ensured = true;
 }

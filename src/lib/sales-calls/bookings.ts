@@ -1,10 +1,16 @@
+import { randomBytes } from 'crypto';
 import { sql } from '@/lib/db';
 import {
   SALES_CALL_DURATION_MIN,
   SALES_CALL_PROJECT,
   salesCallMeetingUrl,
 } from './constants';
-import { fetchPeerBusy, mirrorBookingToPeer } from './peer-sync';
+import { sendSalesCallConfirmationEmail } from './guest-email';
+import {
+  fetchPeerBusy,
+  mirrorBookingToPeer,
+  mirrorCancelToPeer,
+} from './peer-sync';
 import { ensureSalesCallBookingsSchema } from './schema';
 import {
   formatSlotMadrid,
@@ -12,7 +18,10 @@ import {
   madridDateKey,
   slotEnd,
 } from './slots';
-import { notifySalesCallBooked } from './telegram-notify';
+import {
+  notifySalesCallBooked,
+  notifySalesCallCancelled,
+} from './telegram-notify';
 
 export type AvailabilityDay = {
   dateKey: string;
@@ -80,7 +89,14 @@ export type BookSalesCallInput = {
 export async function bookSalesCall(
   input: BookSalesCallInput
 ): Promise<
-  | { ok: true; id: string; meetingUrl: string; startAt: string; endAt: string }
+  | {
+      ok: true;
+      id: string;
+      meetingUrl: string;
+      startAt: string;
+      endAt: string;
+      manageToken: string;
+    }
   | { ok: false; error: string }
 > {
   await ensureSalesCallBookingsSchema();
@@ -124,13 +140,15 @@ export async function bookSalesCall(
   const meetingUrl =
     salesCallMeetingUrl() ||
     'Te enviaremos el enlace de la videollamada por email';
+  const manageToken = randomBytes(24).toString('hex');
 
   let inserted: { id: string } | null = null;
   try {
     const ins = await sql`
       INSERT INTO sales_call_bookings (
         project, start_at, end_at, duration_minutes,
-        name, email, phone, comments, meeting_url, source, status
+        name, email, phone, comments, meeting_url, source, status,
+        manage_token
       )
       VALUES (
         ${SALES_CALL_PROJECT},
@@ -143,7 +161,8 @@ export async function bookSalesCall(
         ${comments},
         ${meetingUrl},
         ${source},
-        'confirmed'
+        'confirmed',
+        ${manageToken}
       )
       RETURNING id::text AS id
     `;
@@ -183,6 +202,14 @@ export async function bookSalesCall(
     meetingUrl,
     source,
   });
+  void sendSalesCallConfirmationEmail({
+    to: email,
+    name,
+    dateLabel: fmt.dateLabel,
+    timeLabel: fmt.timeLabel,
+    meetingUrl,
+    manageToken,
+  });
 
   return {
     ok: true,
@@ -190,7 +217,117 @@ export async function bookSalesCall(
     meetingUrl,
     startAt: start.toISOString(),
     endAt: end.toISOString(),
+    manageToken,
   };
+}
+
+export type SalesCallBookingRow = {
+  id: string;
+  name: string;
+  email: string;
+  startAt: string;
+  endAt: string;
+  meetingUrl: string;
+  status: string;
+  manageToken: string;
+  dateLabel: string;
+  timeLabel: string;
+};
+
+export async function getBookingByManageToken(
+  token: string
+): Promise<SalesCallBookingRow | null> {
+  await ensureSalesCallBookingsSchema();
+  const t = token.trim();
+  if (!t || t.length < 16) return null;
+  const r = await sql`
+    SELECT id::text AS id, name, email, status,
+      meeting_url, manage_token,
+      start_at AT TIME ZONE 'UTC' AS start_at,
+      end_at AT TIME ZONE 'UTC' AS end_at
+    FROM sales_call_bookings
+    WHERE manage_token = ${t}
+      AND project = ${SALES_CALL_PROJECT}
+    LIMIT 1
+  `;
+  const row = r.rows[0];
+  if (!row) return null;
+  const start = new Date(String(row.start_at));
+  const fmt = formatSlotMadrid(start);
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    email: String(row.email),
+    startAt: start.toISOString(),
+    endAt: new Date(String(row.end_at)).toISOString(),
+    meetingUrl: String(row.meeting_url || ''),
+    status: String(row.status),
+    manageToken: String(row.manage_token || t),
+    dateLabel: fmt.dateLabel,
+    timeLabel: fmt.timeLabel,
+  };
+}
+
+export async function cancelSalesCallByToken(
+  token: string
+): Promise<{ ok: true; booking: SalesCallBookingRow } | { ok: false; error: string }> {
+  await ensureSalesCallBookingsSchema();
+  const booking = await getBookingByManageToken(token);
+  if (!booking) return { ok: false, error: 'Reserva no encontrada.' };
+  if (booking.status !== 'confirmed') {
+    return { ok: false, error: 'Esta reserva ya no está activa.' };
+  }
+
+  await sql`
+    UPDATE sales_call_bookings
+    SET status = 'cancelled', updated_at = NOW()
+    WHERE id = ${booking.id}::uuid AND status = 'confirmed'
+  `;
+
+  void mirrorCancelToPeer({
+    remoteId: booking.id,
+    startAt: booking.startAt,
+  });
+  void notifySalesCallCancelled({
+    name: booking.name,
+    email: booking.email,
+    dateLabel: booking.dateLabel,
+    timeLabel: booking.timeLabel,
+  });
+
+  return { ok: true, booking: { ...booking, status: 'cancelled' } };
+}
+
+/** Cancela espejo local creado por el peer. */
+export async function cancelPeerMirror(opts: {
+  remoteId: string;
+  startAt?: string;
+}): Promise<{ ok: boolean }> {
+  await ensureSalesCallBookingsSchema();
+  if (opts.remoteId) {
+    await sql`
+      UPDATE sales_call_bookings
+      SET status = 'cancelled', updated_at = NOW()
+      WHERE status = 'confirmed'
+        AND (
+          peer_mirror_id = ${opts.remoteId}
+          OR id::text = ${opts.remoteId}
+        )
+    `;
+  }
+  if (opts.startAt) {
+    const start = new Date(opts.startAt);
+    if (!Number.isNaN(start.getTime())) {
+      await sql`
+        UPDATE sales_call_bookings
+        SET status = 'cancelled', updated_at = NOW()
+        WHERE status = 'confirmed'
+          AND project = 'mirror'
+          AND start_at = ${start.toISOString()}::timestamptz
+      `;
+    }
+  }
+  return { ok: true };
 }
 
 export async function listLocalBusy(

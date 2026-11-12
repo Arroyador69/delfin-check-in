@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { listLocalBusy, upsertPeerMirror } from '@/lib/sales-calls/bookings';
+import {
+  cancelPeerMirror,
+  listLocalBusy,
+  upsertPeerMirror,
+} from '@/lib/sales-calls/bookings';
 import { authorizeSalesCallSync } from '@/lib/sales-calls/peer-sync';
 
 export const runtime = 'nodejs';
@@ -45,4 +49,19 @@ export async function POST(req: NextRequest) {
     console.error('[sales-calls/peer-busy POST]', e);
     return NextResponse.json({ error: 'mirror_failed' }, { status: 500 });
   }
+}
+
+/** DELETE: el peer cancela → liberamos el espejo. */
+export async function DELETE(req: NextRequest) {
+  if (!authorizeSalesCallSync(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  const remoteId = String(body.remoteId || body.id || '');
+  const startAt = body.startAt ? String(body.startAt) : undefined;
+  if (!remoteId && !startAt) {
+    return NextResponse.json({ error: 'missing fields' }, { status: 400 });
+  }
+  await cancelPeerMirror({ remoteId, startAt });
+  return NextResponse.json({ ok: true });
 }

@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS sales_call_bookings (
   status TEXT NOT NULL DEFAULT 'confirmed'
     CHECK (status IN ('confirmed', 'cancelled', 'completed', 'no_show')),
   peer_mirror_id TEXT,
+  manage_token TEXT,
+  reminder_sent_at TIMESTAMPTZ,
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -31,3 +33,10 @@ CREATE INDEX IF NOT EXISTS sales_call_bookings_range_idx
 
 CREATE INDEX IF NOT EXISTS sales_call_bookings_email_idx
   ON sales_call_bookings (lower(email));
+
+CREATE UNIQUE INDEX IF NOT EXISTS sales_call_bookings_manage_token_uidx
+  ON sales_call_bookings (manage_token)
+  WHERE manage_token IS NOT NULL;
+
+ALTER TABLE sales_call_bookings ADD COLUMN IF NOT EXISTS manage_token TEXT;
+ALTER TABLE sales_call_bookings ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;

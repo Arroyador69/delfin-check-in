@@ -30,6 +30,40 @@ export async function notifySalesCallBooked(opts: {
   return sendTelegramMessage(lines.join('\n'));
 }
 
+export async function notifySalesCallReminder(opts: {
+  name: string;
+  email: string;
+  dateLabel: string;
+  timeLabel: string;
+  meetingUrl: string;
+}): Promise<boolean> {
+  return sendTelegramMessage(
+    [
+      `⏰ <b>Llamada en ~1 h · Delfín</b>`,
+      ``,
+      `<b>${escapeHtml(opts.dateLabel)} · ${escapeHtml(opts.timeLabel)}</b> (Madrid)`,
+      `<b>${escapeHtml(opts.name)}</b> · ${escapeHtml(opts.email)}`,
+      `<b>Zoom:</b> ${escapeHtml(opts.meetingUrl)}`,
+    ].join('\n')
+  );
+}
+
+export async function notifySalesCallCancelled(opts: {
+  name: string;
+  email: string;
+  dateLabel: string;
+  timeLabel: string;
+}): Promise<boolean> {
+  return sendTelegramMessage(
+    [
+      `❌ <b>Llamada cancelada · Delfín</b>`,
+      ``,
+      `<b>${escapeHtml(opts.dateLabel)} · ${escapeHtml(opts.timeLabel)}</b>`,
+      `${escapeHtml(opts.name)} · ${escapeHtml(opts.email)}`,
+    ].join('\n')
+  );
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
