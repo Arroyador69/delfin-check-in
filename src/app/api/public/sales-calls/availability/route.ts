@@ -18,7 +18,7 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const days = await listAvailableSlots({ days: 14 });
+    const days = await listAvailableSlots({ days: 45 });
     return jsonWithSalesCallCors(req, {
       success: true,
       durationMinutes: SALES_CALL_DURATION_MIN,
