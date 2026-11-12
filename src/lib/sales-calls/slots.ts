@@ -116,9 +116,9 @@ export function generateSlotStarts(opts: {
         if (start.getTime() >= now.getTime() + leadMs) slots.push(start);
       }
     }
-    // next calendar day in Madrid
+    // Avanzar exactamente 1 día calendario Madrid (NO +36h: saltaba días).
     const noon = madridLocalToUtc(cursor, 12, 0);
-    const next = new Date(noon.getTime() + 36 * 3600 * 1000);
+    const next = new Date(noon.getTime() + 24 * 3600 * 1000);
     cursor = madridDateKey(next);
   }
   return slots;

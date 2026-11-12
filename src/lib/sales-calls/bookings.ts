@@ -42,26 +42,46 @@ export async function listAvailableSlots(opts?: {
   const toIso = slotEnd(candidates[candidates.length - 1]!).toISOString();
 
   const local = await sql`
-    SELECT start_at AT TIME ZONE 'UTC' AS start_at
+    SELECT start_at, end_at
     FROM sales_call_bookings
     WHERE status = 'confirmed'
-      AND start_at >= ${fromIso}::timestamptz
-      AND start_at <= ${toIso}::timestamptz
+      AND start_at < ${toIso}::timestamptz
+      AND end_at > ${fromIso}::timestamptz
   `;
-  const busy = new Set<string>();
+  /** Intervalos ocupados: solo bloquean el hueco que solapa (no el día entero). */
+  const busyIntervals: Array<{ startMs: number; endMs: number }> = [];
   for (const row of local.rows) {
-    busy.add(new Date(String(row.start_at)).toISOString());
+    const s = new Date(String(row.start_at)).getTime();
+    const e = new Date(String(row.end_at)).getTime();
+    if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
+      busyIntervals.push({ startMs: s, endMs: e });
+    }
   }
 
   const peer = await fetchPeerBusy(fromIso, toIso);
   for (const b of peer) {
-    busy.add(new Date(b.startAt).toISOString());
+    const s = new Date(b.startAt).getTime();
+    const e = new Date(b.endAt).getTime();
+    if (Number.isFinite(s) && Number.isFinite(e) && e > s) {
+      busyIntervals.push({ startMs: s, endMs: e });
+    } else if (Number.isFinite(s)) {
+      // Peer solo manda start → bloquea 15 min
+      busyIntervals.push({
+        startMs: s,
+        endMs: s + SALES_CALL_DURATION_MIN * 60_000,
+      });
+    }
   }
 
   const byDay = new Map<string, AvailabilityDay>();
   for (const start of candidates) {
-    const iso = start.toISOString();
-    if (busy.has(iso)) continue;
+    const end = slotEnd(start);
+    const startMs = start.getTime();
+    const endMs = end.getTime();
+    const overlaps = busyIntervals.some(
+      (b) => startMs < b.endMs && endMs > b.startMs
+    );
+    if (overlaps) continue;
     const { dateKey, dateLabel, timeLabel } = formatSlotMadrid(start);
     let day = byDay.get(dateKey);
     if (!day) {
@@ -69,8 +89,8 @@ export async function listAvailableSlots(opts?: {
       byDay.set(dateKey, day);
     }
     day.slots.push({
-      startAt: iso,
-      endAt: slotEnd(start).toISOString(),
+      startAt: start.toISOString(),
+      endAt: end.toISOString(),
       timeLabel,
     });
   }
